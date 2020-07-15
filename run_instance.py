@@ -48,8 +48,7 @@ async def solve_async(row):
             objective = ""
             if not is_satisfaction and result.solution is not None:
                 objective = result.solution.objective
-            if result.solution is not None:
-                writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics["time"], result.status, objective])
+            writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, objective])
 
     with open(f"{filename}_stats.csv", "w") as file:
         keys = list(

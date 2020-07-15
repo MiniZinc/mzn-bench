@@ -3,6 +3,7 @@
 # Note that this scipt should be called using `sbatch --array=1-x run_instance.sh` where `x` is the number of instances times the number of solvers
 
 # Configure me to match your node requirements
+#SBATCH --job-name=minibench
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4096
 #SBATCH --nodelist=critical001

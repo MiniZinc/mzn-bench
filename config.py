@@ -1,4 +1,5 @@
 import minizinc
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -8,7 +9,7 @@ solvers = [
     minizinc.Solver.lookup("chuffed"),
     minizinc.Solver.lookup("gecode"),
 ]
-timeout = timedelta(minutes=1)
+timeout = timedelta(minutes=15)
 processes = None
 random_seed = None
 free_search = True
