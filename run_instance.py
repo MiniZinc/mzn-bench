@@ -5,6 +5,7 @@ import csv
 import minizinc
 import os
 import sys
+import traceback
 
 from pathlib import Path
 
@@ -80,7 +81,6 @@ try:
 
         # Run instance
         asyncio.run(solve_async(selected_instance))
-except Exception as e:
-    print(f"ERROR: {e}")
-    file = Path(f"{selected_instance}_err.txt")
-    file.write_text(f"{e}")
+except Exception:
+    file = Path(f"{filename}_err.txt")
+    file.write_text(f"ERROR: {traceback.format_exc()}")
