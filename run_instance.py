@@ -54,15 +54,15 @@ async def solve_async(row):
         ):
             status = result.status
             statistics.update(result.statistics)
-            objective = ""
+            statistics["status"] = result.status
             if not is_satisfaction and result.solution is not None:
-                objective = result.solution.objective
-            writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, objective])
+                statistics["objective"] = result.solution.objective
+            writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, statistics.get("objective", "")])
 
     with open(f"{filename}_stats.csv", "w") as file:
         keys = list(
             set(
-                ["problem", "model", "data_file", "status"]
+                ["problem", "model", "data_file", "status", "objective"]
                 + list(minizinc.result.StdStatisticTypes.keys())
                 + list(statistics.keys())
             )
