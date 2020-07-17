@@ -77,7 +77,7 @@ try:
             row = row + 1
         selected_instance = next(reader)
         solver = config.solvers[jobnr]
-        filename = f"results/{row}_{solver.id}_{solver.version.replace('.', '_')}"
+        filename = f"results/{row}_{solver.id.replace('.', '_')}_{solver.version.replace('.', '_').replace('/', '_')}"
 
         # Run instance
         asyncio.run(solve_async(selected_instance))
