@@ -60,13 +60,13 @@ async def solve_async(row):
             writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, statistics.get("objective", "")])
 
     with open(f"{filename}_stats.csv", "w") as file:
-        keys = list(
+        keys = sorted(list(
             set(
                 ["problem", "model", "data_file", "status", "objective"]
                 + list(minizinc.result.StdStatisticTypes.keys())
                 + list(statistics.keys())
             )
-        )
+        ))
         writer_stat = csv.DictWriter(
             file, keys, dialect="unix", extrasaction="ignore"
         )
