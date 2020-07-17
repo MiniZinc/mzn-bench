@@ -9,7 +9,6 @@ import traceback
 
 from pathlib import Path
 
-
 # Instances Selection (File location)
 if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <jobnr>")
@@ -17,10 +16,16 @@ if len(sys.argv) != 2:
 
 jobnr = int(sys.argv[1]) - 1
 solver = None
+extra_flags = {}
+extra_data = None
 filename = "noname"
 
 async def solve_async(row):
-    instance = minizinc.Instance(solver, minizinc.Model(Path(row[1])))
+    model = minizinc.Model(Path(row[1]))
+
+    if extra_data is not None:
+        model.add_string(extra_data)
+    instance = minizinc.Instance(solver, model)
     if row[2] != "":
         instance.add_file(row[2], parse_data=False)
     is_satisfaction = (instance.method == minizinc.Method.SATISFY)
@@ -43,6 +48,9 @@ async def solve_async(row):
             intermediate_solutions=True,
             free_search=config.free_search,
             # optimisation_level=config.optimisation_level,
+
+            **extra_flags,
+
         ):
             status = result.status
             statistics.update(result.statistics)
@@ -76,8 +84,8 @@ try:
             jobnr = jobnr - len(config.solvers)
             row = row + 1
         selected_instance = next(reader)
-        solver = config.solvers[jobnr]
-        filename = f"results/{row}_{solver.id.replace('.', '_')}_{solver.version.replace('.', '_').replace('/', '_')}"
+        solver, extra_flags, extra_data = config.solvers[jobnr]
+        filename = f"results/{row}_{jobnr}_{solver.id.replace('.', '_')}_{solver.version.replace('.', '_').replace('/', '_')}"
 
         # Run instance
         asyncio.run(solve_async(selected_instance))

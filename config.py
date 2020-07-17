@@ -6,8 +6,8 @@ from pathlib import Path
 # Configure me
 instances = Path("instances.csv")
 solvers = [
-    minizinc.Solver.lookup("chuffed"),
-    minizinc.Solver.lookup("gecode"),
+   (minizinc.Solver.lookup("chuffed"), {}, None),
+   (minizinc.Solver.lookup("gecode"), {}, None),
 ]
 timeout = timedelta(minutes=15)
 processes = None
