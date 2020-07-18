@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# from pathlib import Path
-# all_files = Path('.').glob("./results/*_stats.csv")
 
 import os, glob
 import pandas as pd
