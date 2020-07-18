@@ -58,6 +58,9 @@ async def solve_async(row):
                 statistics["objective"] = result.solution.objective
             writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, statistics.get("objective", "")])
 
+        write_statistics(statistics)
+
+def write_statistics(statistics):
     with open(f"{filename}_stats.csv", "w") as file:
         # TODO to have a nicer order, a complete set of statistics keys should be sorted, and then duplicates should be removed without order distL
         keys = list(
@@ -106,3 +109,6 @@ try:
 except Exception:
     file = Path(f"{filename}_err.txt")
     file.write_text(f"ERROR: {traceback.format_exc()}")
+
+    statistics["status"]="ERROR"
+    write_statistics(statistics)
