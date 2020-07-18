@@ -14,7 +14,7 @@ if [ -d venv ]; then
 else
     python3 -m venv venv
     source venv/bin/activate
-    python3 -m pip install minizinc
+    python3 -m pip install minizinc pandas
 fi
 mkdir -p results
 
