@@ -79,6 +79,7 @@ try:
         reader = csv.reader(instances_file, dialect="unix")
         next(reader)  # Skip the header line
         row = 1
+        statistics["jobnr"] = jobnr
         while jobnr >= len(config.runs):
             next(reader)  # Skip non-selected instances
             jobnr = jobnr - len(config.runs)
@@ -91,8 +92,8 @@ try:
         extra_data = run.get("extra_data", None)
 
 
+        statistics["run"] = jobnr
         statistics["row"] = row
-        statistics["jobnr"] = jobnr
         statistics["alias"] = alias
 
         statistics["solver_id"] = solver.id
