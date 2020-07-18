@@ -14,6 +14,7 @@ if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <jobnr>")
     exit(1)
 
+statistics = {}
 jobnr = int(sys.argv[1]) - 1
 solver = None
 extra_flags = {}
@@ -30,11 +31,9 @@ async def solve_async(row):
         instance.add_file(row[2], parse_data=False)
     is_satisfaction = (instance.method == minizinc.Method.SATISFY)
 
-    statistics = {
-        "problem": row[0],
-        "model" : row[1],
-        "data_file": row[2],
-    }
+    statistics["problem"] = row[0]
+    statistics["model"] = row[1]
+    statistics["data_file"] = row[2]
 
     with open(f"{filename}_sol.csv", "w") as file:
         keys = ["problem", "model", "data_file", "solver", "time", "status", "objective"]
@@ -60,6 +59,7 @@ async def solve_async(row):
             writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, statistics.get("objective", "")])
 
     with open(f"{filename}_stats.csv", "w") as file:
+        # TODO to have a nicer order, a complete set of statistics keys should be sorted, and then duplicates should be removed without order distL
         keys = sorted(list(
             set(
                 ["problem", "model", "data_file", "status", "objective"]
@@ -79,13 +79,26 @@ try:
         reader = csv.reader(instances_file, dialect="unix")
         next(reader)  # Skip the header line
         row = 1
-        while jobnr >= len(config.solvers):
+        while jobnr >= len(config.runs):
             next(reader)  # Skip non-selected instances
-            jobnr = jobnr - len(config.solvers)
+            jobnr = jobnr - len(config.runs)
             row = row + 1
         selected_instance = next(reader)
-        solver, extra_flags, extra_data = config.solvers[jobnr]
-        filename = f"results/{row}_{jobnr}_{solver.id.replace('.', '_')}_{solver.version.replace('.', '_').replace('/', '_')}"
+        run = config.runs[jobnr]
+        solver = run["solver"]
+        alias = run.get("alias", "")
+        extra_flags = run.get("extra_flags", {})
+        extra_data = run.get("extra_data", None)
+
+
+        statistics["row"] = row
+        statistics["jobnr"] = jobnr
+        statistics["alias"] = alias
+
+        statistics["solver_id"] = solver.id
+        statistics["solver_version"] = solver.version
+
+        filename = f"results/{row}_{jobnr}_{alias}_{solver.id.replace('.', '_')}_{solver.version.replace('.', '_').replace('/', '_')}"
 
         # Run instance
         asyncio.run(solve_async(selected_instance))

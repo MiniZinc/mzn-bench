@@ -4,10 +4,10 @@ from datetime import timedelta
 from pathlib import Path
 
 # Configure me
-instances = Path("instances.csv")
-solvers = [
-   (minizinc.Solver.lookup("chuffed"), {}, None),
-   (minizinc.Solver.lookup("gecode"), {}, None),
+instances = Path("./instances.csv")
+runs = [
+  {"solver": minizinc.Solver.lookup("chuffed")},
+  {"solver": minizinc.Solver.lookup("gecode")},
 ]
 timeout = timedelta(minutes=15)
 processes = None
