@@ -60,13 +60,13 @@ async def solve_async(row):
 
     with open(f"{filename}_stats.csv", "w") as file:
         # TODO to have a nicer order, a complete set of statistics keys should be sorted, and then duplicates should be removed without order distL
-        keys = sorted(list(
-            set(
-                ["problem", "model", "data_file", "status", "objective"]
-                + list(minizinc.result.StdStatisticTypes.keys())
-                + list(statistics.keys())
-            )
-        ))
+        keys = list(
+                set(
+                    ["problem", "model", "data_file", "status", "objective"]
+                    + list(minizinc.result.StdStatisticTypes.keys())
+                    + list(statistics.keys())
+                    )
+                )
         writer_stat = csv.DictWriter(
             file, keys, dialect="unix", extrasaction="ignore"
         )
