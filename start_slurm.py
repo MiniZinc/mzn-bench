@@ -22,6 +22,5 @@ out = sbatch_proc.read()
 
 if sbatch_proc.close() is None:
     jobnr = re.findall('\d+$', out)[0]
-    print("j", jobnr)
     os.popen(f"sbatch --output=/dev/null --time=1 --dependency=afterok:{jobnr} {str(post_processing_script.resolve())}")
 
