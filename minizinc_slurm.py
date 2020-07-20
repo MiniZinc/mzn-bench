@@ -40,15 +40,19 @@ configurations = [
 
 # The actual script that schedules SLURM tasks
 if __name__ == "__main__":
-    num_instances = sum(1 for line in config.instances.open()) - 1
-    num_solvers = len(config.solvers)
+    num_instances = sum(1 for line in instances.open()) - 1
 
-    output_dir.mkdir(parents=True, exists_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    script = this_dir / "run_instance.sh"
+    script = this_dir / "run_instance.py"
     assert script.exists()
 
     hard_timeout = timeout + timedelta(minutes=1)
+
+    if "PYTHONPATH" in os.environ:
+        os.environ["PYTHONPATH"] += os.pathsep + str(this_dir.resolve())
+    else:
+        os.environ["PYTHONPATH"] = str(this_dir.resolve())
 
     os.execlp(
         "sbatch",
@@ -57,8 +61,8 @@ if __name__ == "__main__":
         f'--job-name="{job_name}"',
         f"--cpus-per-task={cpus_per_task}",
         f"--mem={mem}",
-        f"--node_list={','.join(nodelist)}",
-        f"--array=1-{num_instances*num_solvers}",
+        f"--nodelist={','.join(nodelist)}",
+        f"--array=1-{num_instances*len(configurations)}",
         f"--time={hard_timeout}",
         str(script.resolve()),
     )

@@ -14,9 +14,15 @@ from pathlib import Path
 
 
 async def solve_async(row, config):
-    instance = minizinc.Instance(config.solver, minizinc.Model(Path(row[1])))
+    model = Path(row[1])
+    if not model.is_absolute():
+        model = minizinc_slurm.instances.parent / model
+    instance = minizinc.Instance(config.solver, minizinc.Model(model))
     if row[2] != "":
-        instance.add_file(row[2], parse_data=False)
+        data = Path(row[2])
+        if not data.is_absolute():
+            data = minizinc_slurm.instances.parent / data
+        instance.add_file(data, parse_data=False)
     is_satisfaction = instance.method == minizinc.Method.SATISFY
 
     statistics = {
