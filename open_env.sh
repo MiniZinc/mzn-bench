@@ -18,5 +18,5 @@ else
 fi
 mkdir -p results
 
-# load cluster modules
+# Set other environment variables and load cluster modules
 module load MiniZinc/2.4.3
