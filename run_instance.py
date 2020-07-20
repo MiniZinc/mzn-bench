@@ -12,15 +12,16 @@ import traceback
 from datetime import timedelta
 from pathlib import Path
 
+
 async def solve_async(row, config):
     instance = minizinc.Instance(config.solver, minizinc.Model(Path(row[1])))
     if row[2] != "":
         instance.add_file(row[2], parse_data=False)
-    is_satisfaction = (instance.method == minizinc.Method.SATISFY)
+    is_satisfaction = instance.method == minizinc.Method.SATISFY
 
     statistics = {
         "problem": row[0],
-        "model" : row[1],
+        "model": row[1],
         "data_file": row[2],
         "configuration": config.name,
     }
@@ -36,7 +37,7 @@ async def solve_async(row, config):
         ):
             solution = {
                 "problem": row[0],
-                "model" : row[1],
+                "model": row[1],
                 "data_file": row[2],
                 "configuration": config.name,
                 "status": str(result.status),
@@ -54,12 +55,17 @@ async def solve_async(row, config):
     for key, val in statistics.items():
         if isinstance(val, timedelta):
             statistics[key] = val.total_seconds()
-    ruamel.yaml.dump(statistics, (minizinc_slurm.output_dir / f"{filename}_stats.yml").open(mode="w"), default_flow_style=False)
+    ruamel.yaml.dump(
+        statistics,
+        (minizinc_slurm.output_dir / f"{filename}_stats.yml").open(mode="w"),
+        default_flow_style=False,
+    )
+
 
 if __name__ == "__main__":
     filename = "noname"
     try:
-        # Select instance based on 
+        # Select instance based on SLURM_ARRAY_TASK_ID
         task_id = int(os.environ["SLURM_ARRAY_TASK_ID"]) - 1
         selected_instance = None
         with open(minizinc_slurm.instances) as instances_file:

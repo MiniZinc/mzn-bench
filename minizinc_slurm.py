@@ -32,6 +32,7 @@ class Configuration:
     optimisation_level: Optional[int] = None
     other_flags: Dict[str, Any] = field(default_factory=dict)
 
+
 configurations = [
     Configuration("Gecode", Solver.lookup("gecode")),
     Configuration("Chuffed", Solver.lookup("chuffed")),
@@ -43,8 +44,15 @@ if __name__ == "__main__":
     num_solvers = len(config.solvers)
 
     script = this_dir / "run_instance.sh"
-    assert(script.exists())
+    assert script.exists()
 
     hard_timeout = timeout + timedelta(minutes=1)
 
-    os.execlp("sbatch", "sbatch", "--output=/dev/null", f"--array=1-{num_instances*num_solvers}", f"--time={timeout}", str(script.resolve()))
+    os.execlp(
+        "sbatch",
+        "sbatch",
+        "--output=/dev/null",
+        f"--array=1-{num_instances*num_solvers}",
+        f"--time={timeout}",
+        str(script.resolve()),
+    )
