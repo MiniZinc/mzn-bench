@@ -41,6 +41,7 @@ async def solve_async(row, config):
             intermediate_solutions=True,
             free_search=config.free_search,
             # optimisation_level=config.optimisation_level,
+            **config.other_flags
         ):
             solution = {
                 "problem": row[0],
