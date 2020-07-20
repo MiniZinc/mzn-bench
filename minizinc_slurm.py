@@ -11,7 +11,7 @@ this_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 
 # Configure SLURM attributes
 job_name = "MiniZinc Benchmark"
-cpu_per_task = 1
+cpus_per_task = 1
 mem = 4096
 nodelist = ["critical001"]
 
@@ -40,8 +40,10 @@ configurations = [
 
 # The actual script that schedules SLURM tasks
 if __name__ == "__main__":
-    num_instances = sum(1 for line in open(config.instances)) - 1
+    num_instances = sum(1 for line in config.instances.open()) - 1
     num_solvers = len(config.solvers)
+
+    output_dir.mkdir(parents=True, exists_ok=True)
 
     script = this_dir / "run_instance.sh"
     assert script.exists()
@@ -52,7 +54,11 @@ if __name__ == "__main__":
         "sbatch",
         "sbatch",
         "--output=/dev/null",
+        f'--job-name="{job_name}"',
+        f"--cpus-per-task={cpus_per_task}",
+        f"--mem={mem}",
+        f"--node_list={','.join(nodelist)}",
         f"--array=1-{num_instances*num_solvers}",
-        f"--time={timeout}",
+        f"--time={hard_timeout}",
         str(script.resolve()),
     )
