@@ -2,11 +2,14 @@
 import asyncio
 import config
 import csv
+import dataclasses
 import minizinc
 import os
+import ruamel.yaml
 import sys
 import traceback
 
+from datetime import timedelta
 from pathlib import Path
 
 
@@ -31,11 +34,7 @@ async def solve_async(row):
         "data_file": row[2],
     }
 
-    with open(f"{filename}_sol.csv", "w") as file:
-        keys = ["problem", "model", "data_file", "solver", "time", "status", "objective"]
-        writer_sol = csv.writer(file, dialect="unix")
-        writer_sol.writerow(keys)
-
+    with Path(f"{filename}_sol.yml").open(mode="w") as file:
         async for result in instance.solutions(
             timeout=config.timeout,
             processes=config.processes,
@@ -44,26 +43,26 @@ async def solve_async(row):
             free_search=config.free_search,
             # optimisation_level=config.optimisation_level,
         ):
-            status = result.status
-            statistics.update(result.statistics)
-            objective = ""
-            if not is_satisfaction and result.solution is not None:
-                objective = result.solution.objective
-            writer_sol.writerow(row + [solver.id + "@" + solver.version, result.statistics.get("time", ""), result.status, objective])
+            solution = {
+                "problem": row[0],
+                "model" : row[1],
+                "data_file": row[2],
+                "status": str(result.status),
+            }
+            if "time" in result.statistics:
+                solution["time"] = result.statistics.pop("time").total_seconds()
+            if result.solution is not None:
+                solution["solution"] = dataclasses.asdict(result.solution)
+                solution["solution"].pop("_output_item", None)
+                solution["solution"].pop("_checker", None)
+            file.write(ruamel.yaml.dump([solution]))
 
-    with open(f"{filename}_stats.csv", "w") as file:
-        keys = list(
-            set(
-                ["problem", "model", "data_file", "status"]
-                + list(minizinc.result.StdStatisticTypes.keys())
-                + list(statistics.keys())
-            )
-        )
-        writer_stat = csv.DictWriter(
-            file, keys, dialect="unix", extrasaction="ignore"
-        )
-        writer_stat.writeheader()
-        writer_stat.writerow(statistics)
+            statistics.update(result.statistics)
+
+    for key, val in statistics.items():
+        if isinstance(val, timedelta):
+            statistics[key] = val.total_seconds()
+    ruamel.yaml.dump(statistics, Path(f"{filename}_stats.yml").open(mode="w"), default_flow_style=False)
 
 
 try:
