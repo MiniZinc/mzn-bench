@@ -30,7 +30,7 @@ async def solve_async(row, config):
         "model": row[1],
         "data_file": row[2],
         "configuration": config.name,
-        "status": str(minizinc.result.Status.UNKNOWN)
+        "status": str(minizinc.result.Status.UNKNOWN),
     }
 
     with (minizinc_slurm.output_dir / f"{filename}_sol.yml").open(mode="w") as file:
@@ -41,7 +41,7 @@ async def solve_async(row, config):
             intermediate_solutions=True,
             free_search=config.free_search,
             # optimisation_level=config.optimisation_level,
-            **config.other_flags
+            **config.other_flags,
         ):
             solution = {
                 "problem": row[0],
@@ -61,8 +61,7 @@ async def solve_async(row, config):
             statistics.update(result.statistics)
             statistics["status"] = str(result.status)
             if result.solution is not None and not is_satisfaction:
-                statistics["objective"] = str(result.status)
-
+                statistics["objective"] = result.solution.objective
 
     for key, val in statistics.items():
         if isinstance(val, timedelta):

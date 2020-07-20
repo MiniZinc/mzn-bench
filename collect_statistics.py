@@ -33,4 +33,3 @@ with output.open(mode="w") as file:
 
     for stat in statistics:
         writer.writerow(stat)
-
