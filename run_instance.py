@@ -30,6 +30,7 @@ async def solve_async(row, config):
         "model": row[1],
         "data_file": row[2],
         "configuration": config.name,
+        "status": str(minizinc.result.Status.UNKNOWN)
     }
 
     with (minizinc_slurm.output_dir / f"{filename}_sol.yml").open(mode="w") as file:
@@ -57,6 +58,10 @@ async def solve_async(row, config):
             file.write(ruamel.yaml.dump([solution]))
 
             statistics.update(result.statistics)
+            statistics["status"] = str(result.status)
+            if result.solution is not None and not is_satisfaction:
+                statistics["objective"] = str(result.status)
+
 
     for key, val in statistics.items():
         if isinstance(val, timedelta):
