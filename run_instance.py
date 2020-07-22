@@ -14,10 +14,13 @@ from pathlib import Path
 
 
 async def solve_async(row, config):
+    driver = minizinc.default_driver
+    if config.minizinc is not None:
+        driver = minizinc.CLI.CLIDriver(config.minizinc)
     model = Path(row[1])
     if not model.is_absolute():
         model = minizinc_slurm.instances.parent / model
-    instance = minizinc.Instance(config.solver, minizinc.Model(model))
+    instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
     if row[2] != "":
         data = Path(row[2])
         if not data.is_absolute():
