@@ -1,2 +1,0 @@
-minizinc
-ruamel.yaml
