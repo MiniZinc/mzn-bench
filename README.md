@@ -22,7 +22,7 @@ python collect_instances.py <directory> > instances.csv
    be loaded using `source bench_env.sh`:
 ```bash
 if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
-    >&2 echo "Remember: you need to run me as 'source ./open_env.sh', not execute it!"
+    >&2 echo "Remember: you need to run me as 'source bench_env.sh', not execute it!"
     exit
 fi
 
