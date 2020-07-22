@@ -3,9 +3,9 @@ import csv
 import glob
 import os
 import sys
-import ruamel.yaml
-
 from pathlib import Path
+
+import ruamel.yaml
 
 if len(sys.argv) != 3:
     print(f"Usage: {sys.argv[0]} <results_dir> <output.csv>")
