@@ -43,7 +43,7 @@ async def solve_async(row, config):
             random_seed=config.random_seed,
             intermediate_solutions=True,
             free_search=config.free_search,
-            # optimisation_level=config.optimisation_level,
+            optimisation_level=config.optimisation_level,
             **config.other_flags,
         ):
             solution = {
