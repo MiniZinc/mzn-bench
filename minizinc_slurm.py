@@ -4,6 +4,7 @@ import csv
 import json
 import os
 import sys
+import time
 import traceback
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
@@ -95,6 +96,7 @@ async def run_instance(
 
     statistics = stat_base.copy()
 
+    start = time.perf_counter()
     with sol_file.open(mode="w") as file:
         async for result in instance.solutions(
             timeout=timeout,
@@ -119,6 +121,9 @@ async def run_instance(
             statistics["status"] = str(result.status)
             if result.solution is not None and not is_satisfaction:
                 statistics["objective"] = result.solution.objective
+
+    total_time = time.perf_counter() - start
+    statistics["time"] = total_time
 
     for key, val in statistics.items():
         if isinstance(val, timedelta):
