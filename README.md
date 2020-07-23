@@ -132,9 +132,17 @@ formatting the information that you need.
 The following scripts can help gather the raw `*_stats.yml`/`*_sol.yml` files and combine
 them for further use:
 
-- `collect_statistics.py <result_dir> <output.csv>` - This script gathers all
+- `collect_statistics.py <result_dir> <statistics.csv>` - This script gathers all
   statistical information given by MiniZinc and the used solvers and combines
   them in a single CSV file.
+
+### Tabulation
+
+The following scripts filter and tabulate specific statistics.
+
+- `report_status.py <statistics.csv>` - This script will report the number of
+  occurrences of the various solving status of your MiniZinc tasks. Please
+  consult the `-h` flag to display all options.
 
 ### Graph generation
 
