@@ -32,7 +32,7 @@ if [ -d venv ]; then
 else
     python3 -m venv venv
     source venv/bin/activate
-    python3 -m pip install -r minizinc ruamel.yaml
+    python3 -m pip install git+https://github.com/Dekker1/minizinc-slurm
 fi
 
 # Set other environment variables and load cluster modules
@@ -125,7 +125,13 @@ scheduled, as an argument.
 
 Once the job is finished, it is time to get your data wrangling pants on! This
 repository contains some scripts that might be helpful in locating and
-formatting the information that you need.
+formatting the information that you need. Some scripts might be used directly
+while other might need some customising to fit your purpose. Note that these
+scripts might require some extra dependencies. For this reason, these scripts
+are not expected to work unless this package is installed as `pip install
+minizinc_slurm[scripts]`. This allows us to install a minimal version on the
+running cluster and this more complete version locally while processing the
+data.
 
 ### General aggregation
 
