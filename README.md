@@ -5,21 +5,20 @@ of MiniZinc instance using MiniZinc Python. The process is split into several
 steps to be easily customisable to different kinds of possible benchmarks.
 
 
-
 ## Preparation
 
 1. Create a CSV file for the MiniZinc instances containing *problem*, *model*,
    *data_file*. If you store the instances in the MiniZinc benchmarks
    repository structure, then you can use the `collect_instances.py` script:
 ```
-python collect_instances.py <directory> > instances.csv
+collect_instances <directory> > instances.csv
 ```
 2. Instantiate a benchmarking environment. This environment should at least
-   contain a Python virtual environment with *MiniZinc Python* and
-   *ruamel.yaml* installed to run the benchmarking scripts, but you can also
-   set up environmental variables, like `PATH`, and load cluster modules. The
-   following script, `bench_env.sh`, provides an example environment that can
-   be loaded using `source bench_env.sh`:
+   contain a Python virtual environment with *MiniZinc SLURM* your the
+   benchmarking scripts, but you can also set up environmental variables, like
+   `PATH`, and load cluster modules. The following script, `bench_env.sh`,
+   provides an example environment that can be loaded using `source
+   bench_env.sh`:
 ```bash
 if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
     >&2 echo "Remember: you need to run me as 'source bench_env.sh', not execute it!"
@@ -51,7 +50,7 @@ from pathlib import Path
 
 import minizinc
 
-from scripts.minizinc_slurm import Configuration, schedule
+from minizinc_slurm import Configuration, schedule
 
 schedule(
     instances=Path("./instances.csv"),
@@ -138,7 +137,7 @@ data.
 The following scripts can help gather the raw `*_stats.yml`/`*_sol.yml` files and combine
 them for further use:
 
-- `collect_statistics.py <result_dir> <statistics.csv>` - This script gathers all
+- `collect_statistics <result_dir> <statistics.csv>` - This script gathers all
   statistical information given by MiniZinc and the used solvers and combines
   them in a single CSV file.
 
@@ -146,7 +145,7 @@ them for further use:
 
 The following scripts filter and tabulate specific statistics.
 
-- `report_status.py <statistics.csv>` - This script will report the number of
+- `report_status <statistics.csv>` - This script will report the number of
   occurrences of the various solving status of your MiniZinc tasks. Please
   consult the `-h` flag to display all options.
 
