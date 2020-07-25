@@ -18,37 +18,42 @@ import os
 import sys
 from pathlib import Path
 
-if len(sys.argv) != 2:
-    print(f"Usage: {sys.argv[0]} <folder>")
-    exit(1)
 
-assert len(sys.argv) >= 2
-benchmarks_location = sys.argv[1]
-instances = 0
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <folder>")
+        exit(1)
 
+    assert len(sys.argv) >= 2
+    benchmarks_location = sys.argv[1]
+    instances = 0
 
-writer = csv.writer(sys.stdout, dialect="unix")
-writer.writerow(("problem", "model", "data_file"))
-for root, _, files in os.walk(benchmarks_location):
-    for name in files:
-        if name.endswith(".mzn"):
-            problem = root.split(os.sep)[-1]
-            datafiles = 0
-            for nroot, _, nfiles in os.walk(root):
-                for nname in nfiles:
-                    if nname.endswith(".dzn") or nname.endswith(".json"):
-                        datafiles = datafiles + 1
-                        instances += 1
-                        writer.writerow(
-                            (
-                                problem,
-                                Path(root + "/" + name),
-                                Path(nroot + "/" + nname),
+    writer = csv.writer(sys.stdout, dialect="unix")
+    writer.writerow(("problem", "model", "data_file"))
+    for root, _, files in os.walk(benchmarks_location):
+        for name in files:
+            if name.endswith(".mzn"):
+                problem = root.split(os.sep)[-1]
+                datafiles = 0
+                for nroot, _, nfiles in os.walk(root):
+                    for nname in nfiles:
+                        if nname.endswith(".dzn") or nname.endswith(".json"):
+                            datafiles = datafiles + 1
+                            instances += 1
+                            writer.writerow(
+                                (
+                                    problem,
+                                    Path(root + "/" + name),
+                                    Path(nroot + "/" + nname),
+                                )
                             )
-                        )
 
-            if datafiles == 0:
-                instances += 1
-                writer.writerow((problem, Path(root + "/" + name), ""))
+                if datafiles == 0:
+                    instances += 1
+                    writer.writerow((problem, Path(root + "/" + name), ""))
 
-print(f"Nr. Instances = {instances}", file=sys.stderr)
+    print(f"Nr. Instances = {instances}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
