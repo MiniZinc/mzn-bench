@@ -35,7 +35,10 @@ class Configuration:
 
     @classmethod
     def from_dict(cls, obj):
-        obj["solver"] = minizinc.Solver(**json.loads(obj["solver"]))
+        field_names = set(f.name for f in dataclasses.fields(minizinc.Solver))
+        obj["solver"] = minizinc.Solver(
+            **{k: v for k, v in json.loads(obj["solver"]).items() if k in field_names}
+        )
         obj["solver"]._identifier = obj.pop("sol_ident")
         return cls(**obj)
 
