@@ -50,7 +50,14 @@ def schedule(
     job_name: str = "MiniZinc Benchmark",
     cpus_per_task: int = 1,
     memory: int = 4096,
+    debug_slurm: bool = False,
 ) -> NoReturn:
+
+    slurm_output = "/dev/null"
+    if debug_slurm:
+        (Path.cwd() / "logs").mkdir(parents=True, exist_ok=True)
+        slurm_output = "./logs/minizinc_slurm-%A_%a.out"
+
     # Count number of instances
     assert instances.exists()
     num_instances = sum(1 for line in instances.open()) - 1
@@ -70,7 +77,7 @@ def schedule(
     os.execlpe(
         "sbatch",
         "sbatch",
-        "--output=/dev/null",
+        f"--output={slurm_output}",
         f'--job-name="{job_name}"',
         f"--cpus-per-task={cpus_per_task}",
         f"--mem={memory}",
