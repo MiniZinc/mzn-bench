@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import traceback
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
@@ -35,7 +35,7 @@ class Configuration:
 
     @classmethod
     def from_dict(cls, obj):
-        field_names = set(f.name for f in dataclasses.fields(minizinc.Solver))
+        field_names = set(f.name for f in fields(minizinc.Solver))
         obj["solver"] = minizinc.Solver(
             **{k: v for k, v in json.loads(obj["solver"]).items() if k in field_names}
         )
