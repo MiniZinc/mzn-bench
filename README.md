@@ -137,9 +137,9 @@ formatting the information that you need. Some scripts might be used directly
 while other might need some customising to fit your purpose. Note that these
 scripts might require some extra dependencies. For this reason, these scripts
 are not expected to work unless this package is installed as `pip install
-minizinc_slurm[scripts]`. This allows us to install a minimal version on the
-running cluster and this more complete version locally while processing the
-data.
+git+https://github.com/Dekker1/minizinc-slurm#egg=minizinc_slurm[scripts]`.
+This allows us to install a minimal version on the running cluster and this
+more complete version locally while processing the data.
 
 ### General aggregation
 
