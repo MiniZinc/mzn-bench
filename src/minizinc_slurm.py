@@ -25,6 +25,7 @@ class Configuration:
     free_search: bool = False
     optimisation_level: Optional[int] = None
     other_flags: Dict[str, Any] = field(default_factory=dict)
+    extra_data: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self):
         obj = asdict(self)
@@ -93,6 +94,9 @@ async def run_instance(
     if data is not None:
         instance.add_file(data, parse_data=False)
     is_satisfaction = instance.method == minizinc.Method.SATISFY
+
+    for key, value in config.extra_data.items():
+        instance[key] = value
 
     statistics = stat_base.copy()
 

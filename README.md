@@ -89,9 +89,16 @@ A `Configuration` object has the following attributes:
   solver.
 - `random_seed: Optional[int] = None` - Random seed to be used by the solver.
 - `free_search: bool = False` - Solver can determine its own search heuristic.
-- `optimisation_level: Optional[int] = None` - MiniZinc compilation optimisation level, e.g., `-O3`.
+- `optimisation_level: Optional[int] = None` - MiniZinc compilation
+  optimisation level, e.g., `-O3`.
 - `other_flags: Dict[str, Any] = field(default_factory=dict)` - A mapping of
   flag name to value of other flags to be provided to the compiler/solver
+- `extra_data: Dict[str, Any] = field(default_factory=dict)` - Extra data to be
+  added when using a specific Configuration. Internally this will be used by
+  MiniZinc Python's `__setitem__` method on the generated instances. If data
+  needs the value of an identifier internal to MiniZinc, then please use an
+  `UnknownExpression` object (e.g., `{"preferred_encoding":
+  minizinc.model.UnknownExpression("UNARY")}`).
 
 ## Schedule SLURM jobs
 
