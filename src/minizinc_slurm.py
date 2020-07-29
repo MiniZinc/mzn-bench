@@ -56,17 +56,16 @@ def schedule(
     debug_slurm: bool = False,
 ) -> NoReturn:
 
-    slurm_output = "/dev/null"
-    if debug_slurm:
-        (Path.cwd() / "logs").mkdir(parents=True, exist_ok=True)
-        slurm_output = "./logs/minizinc_slurm-%A_%a.out"
-
     # Count number of instances
     assert instances.exists()
     num_instances = sum(1 for line in instances.open()) - 1
 
     # Create output_dir if it does not exist
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    slurm_output = "/dev/null"
+    if debug_slurm:
+        slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
 
     # Locate this script
     this_script = Path(os.path.realpath(__file__))
@@ -97,47 +96,50 @@ def schedule(
 async def run_instance(
     problem, model, data, config, timeout, stat_base, sol_file, stats_file
 ):
-    driver = minizinc.default_driver
-    if config.minizinc is not None:
-        driver = minizinc.CLI.CLIDriver(config.minizinc)
-    instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
-    if data is not None:
-        instance.add_file(data, parse_data=False)
-    is_satisfaction = instance.method == minizinc.Method.SATISFY
-
-    for key, value in config.extra_data.items():
-        instance[key] = value
-
     statistics = stat_base.copy()
+    try:
+        driver = minizinc.default_driver
+        if config.minizinc is not None:
+            driver = minizinc.CLI.CLIDriver(config.minizinc)
+        instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
+        if data is not None:
+            instance.add_file(data, parse_data=False)
+        is_satisfaction = instance.method == minizinc.Method.SATISFY
 
-    start = time.perf_counter()
-    with sol_file.open(mode="w") as file:
-        async for result in instance.solutions(
-            timeout=timeout,
-            processes=config.processes,
-            random_seed=config.random_seed,
-            intermediate_solutions=True,
-            free_search=config.free_search,
-            optimisation_level=config.optimisation_level,
-            **config.other_flags,
-        ):
-            solution = stat_base.copy()
-            solution["status"] = str(result.status)
-            if "time" in result.statistics:
-                solution["time"] = result.statistics.pop("time").total_seconds()
-            if result.solution is not None:
-                solution["solution"] = asdict(result.solution)
-                solution["solution"].pop("_output_item", None)
-                solution["solution"].pop("_checker", None)
-            file.write(ruamel.yaml.dump([solution]))
+        for key, value in config.extra_data.items():
+            instance[key] = value
 
-            statistics.update(result.statistics)
-            statistics["status"] = str(result.status)
-            if result.solution is not None and not is_satisfaction:
-                statistics["objective"] = result.solution.objective
+        start = time.perf_counter()
+        with sol_file.open(mode="w") as file:
+            async for result in instance.solutions(
+                timeout=timeout,
+                processes=config.processes,
+                random_seed=config.random_seed,
+                intermediate_solutions=True,
+                free_search=config.free_search,
+                optimisation_level=config.optimisation_level,
+                **config.other_flags,
+            ):
+                solution = stat_base.copy()
+                solution["status"] = str(result.status)
+                if "time" in result.statistics:
+                    solution["time"] = result.statistics.pop("time").total_seconds()
+                if result.solution is not None:
+                    solution["solution"] = asdict(result.solution)
+                    solution["solution"].pop("_output_item", None)
+                    solution["solution"].pop("_checker", None)
+                file.write(ruamel.yaml.dump([solution]))
 
-    total_time = time.perf_counter() - start
-    statistics["time"] = total_time
+                statistics.update(result.statistics)
+                statistics["status"] = str(result.status)
+                if result.solution is not None and not is_satisfaction:
+                    statistics["objective"] = result.solution.objective
+
+        total_time = time.perf_counter() - start
+        statistics["time"] = total_time
+    except minizinc.MiniZincError as err:
+        statistics["status"] = str(minizinc.result.Status.ERROR)
+        statistics["error"] = str(err)
 
     for key, val in statistics.items():
         if isinstance(val, timedelta):
