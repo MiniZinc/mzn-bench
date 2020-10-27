@@ -54,6 +54,7 @@ def schedule(
     cpus_per_task: int = 1,
     memory: int = 4096,
     debug_slurm: bool = False,
+    nice: Optional[int] = None,
 ) -> NoReturn:
 
     # Count number of instances
@@ -75,9 +76,7 @@ def schedule(
     env["MZN_SLURM_CONFIGS"] = json.dumps([conf.to_dict() for conf in configurations])
     env["MZN_SLURM_TIMEOUT"] = str(int(timeout / timedelta(milliseconds=1)))
 
-    # Replace current process with the correct sbatch call
-    os.execlpe(
-        "sbatch",
+    cmd = [
         "sbatch",
         f"--output={slurm_output}",
         f'--job-name="{job_name}"',
@@ -86,9 +85,21 @@ def schedule(
         f"--nodelist={','.join(nodelist)}",
         f"--array=1-{num_instances*len(configurations)}",
         f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
-        str(this_script.resolve()),
-        str(instances.resolve()),
-        str(output_dir.resolve()),
+    ]
+    if nice is not None:
+        cmd.append(f"--nice={nice}")
+    cmd.extend(
+        [
+            str(this_script.resolve()),
+            str(instances.resolve()),
+            str(output_dir.resolve()),
+        ]
+    )
+
+    # Replace current process with the correct sbatch call
+    os.execvpe(
+        "sbatch",
+        cmd,
         env,
     )
 
@@ -145,7 +156,9 @@ async def run_instance(
         if isinstance(val, timedelta):
             statistics[key] = val.total_seconds()
     ruamel.yaml.dump(
-        statistics, stats_file.open(mode="w"), default_flow_style=False,
+        statistics,
+        stats_file.open(mode="w"),
+        default_flow_style=False,
     )
 
 
