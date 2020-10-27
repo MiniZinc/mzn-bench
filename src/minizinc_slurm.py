@@ -31,6 +31,8 @@ class Configuration:
         obj = asdict(self)
         obj["solver"] = self.solver.output_configuration()
         obj["sol_ident"] = self.solver._identifier
+        if self.minizinc is not None:
+            obj["minizinc"] = str(self.minizinc)
         return obj
 
     @classmethod
@@ -40,6 +42,8 @@ class Configuration:
             **{k: v for k, v in json.loads(obj["solver"]).items() if k in field_names}
         )
         obj["solver"]._identifier = obj.pop("sol_ident")
+        if obj["minizinc"] is not None:
+            obj["minizinc"] = Path(obj["minizinc"])
         return cls(**obj)
 
 
