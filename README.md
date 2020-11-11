@@ -99,8 +99,8 @@ A `Configuration` object has the following attributes:
   added when using a specific Configuration. Internally this will be used by
   MiniZinc Python's `__setitem__` method on the generated instances. If data
   needs the value of an identifier internal to MiniZinc, then please use an
-  `UnknownExpression` object (e.g., `{"preferred_encoding":
-  minizinc.model.UnknownExpression("UNARY")}`).
+  `DZNExpression` object (e.g., `{"preferred_encoding":
+  DZNExpression("UNARY")}`).
 
 ## Schedule SLURM jobs
 

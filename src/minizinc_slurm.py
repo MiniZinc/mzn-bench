@@ -47,6 +47,28 @@ class Configuration:
         return cls(**obj)
 
 
+@dataclass
+class DZNExpression:
+    expr: str
+
+    def __init__(self, dzn_expr: str):
+        self.expr = dzn_expr
+
+
+class _JSONEnc(minizinc.json.MZNJSONEncoder):
+    def default(self, o):
+        if isinstance(o, DZNExpression):
+            return {"_mzn_slurm_dzn_expr": o.expr}
+        return super().default(o)
+
+
+class _JSONDec(minizinc.json.MZNJSONEncoder):
+    def object_hook(self, obj):
+        if len(obj) == 1 and "_mzn_slurm_dzn_expr" in obj:
+            return minizinc.model.UnknownExpression(obj["_mzn_slurm_dzn_expr"])
+        return super().object_hook(obj)
+
+
 # Schedule SLURM tasks
 def schedule(
     instances: Path,
@@ -78,7 +100,7 @@ def schedule(
     # Setup environment to run the script
     env = os.environ.copy()
     env["MZN_SLURM_CONFIGS"] = json.dumps(
-        [conf.to_dict() for conf in configurations], cls=minizinc.json.MZNJSONEncoder
+        [conf.to_dict() for conf in configurations], cls=_JSONEnc
     )
     env["MZN_SLURM_TIMEOUT"] = str(int(timeout / timedelta(milliseconds=1)))
 
@@ -179,7 +201,7 @@ if __name__ == "__main__":
         configurations = [
             Configuration.from_dict(conf)
             for conf in json.loads(
-                os.environ["MZN_SLURM_CONFIGS"], cls=minizinc.json.MZNJSONDecoder
+                os.environ["MZN_SLURM_CONFIGS"], cls=minizinc.json._JSONDec
             )
         ]
 
