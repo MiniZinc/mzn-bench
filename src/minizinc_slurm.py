@@ -77,7 +77,9 @@ def schedule(
 
     # Setup environment to run the script
     env = os.environ.copy()
-    env["MZN_SLURM_CONFIGS"] = json.dumps([conf.to_dict() for conf in configurations])
+    env["MZN_SLURM_CONFIGS"] = json.dumps(
+        [conf.to_dict() for conf in configurations], cls=minizinc.json.MZNJSONEncoder
+    )
     env["MZN_SLURM_TIMEOUT"] = str(int(timeout / timedelta(milliseconds=1)))
 
     cmd = [
@@ -176,7 +178,9 @@ if __name__ == "__main__":
         timeout = timedelta(milliseconds=int(os.environ["MZN_SLURM_TIMEOUT"]))
         configurations = [
             Configuration.from_dict(conf)
-            for conf in json.loads(os.environ["MZN_SLURM_CONFIGS"])
+            for conf in json.loads(
+                os.environ["MZN_SLURM_CONFIGS"], cls=minizinc.json.MZNJSONDecoder
+            )
         ]
 
         # Select instance and configuration based on SLURM_ARRAY_TASK_ID
