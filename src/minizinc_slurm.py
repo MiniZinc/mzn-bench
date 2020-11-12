@@ -62,7 +62,7 @@ class _JSONEnc(minizinc.json.MZNJSONEncoder):
         return super().default(o)
 
 
-class _JSONDec(minizinc.json.MZNJSONEncoder):
+class _JSONDec(minizinc.json.MZNJSONDecoder):
     def object_hook(self, obj):
         if len(obj) == 1 and "_mzn_slurm_dzn_expr" in obj:
             return minizinc.model.UnknownExpression(obj["_mzn_slurm_dzn_expr"])
