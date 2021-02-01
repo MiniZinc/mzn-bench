@@ -1,67 +1,71 @@
-# MiniZinc SLURM
+# MiniZinc Bench
 
 This is a small collection of scripts that allow you to run benchmarks on a set
 of MiniZinc instance using MiniZinc Python. The process is split into several
 steps to be easily customisable to different kinds of possible benchmarks.
 
+> Currently, the only supported way of running benchmarks is through
+  [SLURM](https://slurm.schedmd.com/). Other methods may become available in the
+  future.
 
 ## Preparation
 
 1. Create a CSV file for the MiniZinc instances containing *problem*, *model*,
    *data_file*. If you store the instances in the MiniZinc benchmarks
-   repository structure, then you can use the `collect_instances.py` script:
-```
-collect_instances <directory> > instances.csv
-```
+   repository structure, then you can use the `mzn-bench collect-instances`
+   command:
+   ```bash
+   mzn-bench collect-instances <directory> > instances.csv
+   ```
 2. Instantiate a benchmarking environment. This environment should at least
-   contain a Python virtual environment with *MiniZinc SLURM* your the
-   benchmarking scripts, but you can also set up environmental variables, like
-   `PATH`, and load cluster modules. The following script, `bench_env.sh`,
+   contain a Python virtual environment with *mzn-bench* and your benchmarking
+   scripts, but you can also set up environmental variables, like `PATH`, and 
+   load cluster modules. The following script, `bench_env.sh`,
    provides an example environment that can be loaded using `source
    bench_env.sh`:
-```bash
-if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
-    >&2 echo "Remember: you need to run me as 'source bench_env.sh', not execute it!"
-    exit
-fi
+   ```bash
+   if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
+       >&2 echo "Remember: you need to run me as 'source ${0}', not execute it!"
+       exit
+   fi
 
-# Create or activate Python virtual environment
-if [ -d venv ]; then
-    source venv/bin/activate
-else
-    python3 -m venv venv
-    source venv/bin/activate
-    python3 -m pip install git+https://github.com/Dekker1/minizinc-slurm
-fi
+   # Create or activate Python virtual environment
+   if [ -d venv ]; then
+       source venv/bin/activate
+   else
+      python3 -m venv venv
+       source venv/bin/activate
+       python3 -m pip install mzn-bench
+   fi
 
-# Set other environment variables and load cluster modules
-module load MiniZinc/2.4.3
-```
-3. Create a MiniZinc SLURM benchmarking script. This script will contain the
-   configuration of where the instance file is located, what MiniZinc/Solver
-   configurations to run for every instance, and how SLURM itself should be
-   configured. The script mainly consist of a call to `schedule` in
-   `minizinc_slurm`. For example a benchmarking script that runs Gecode and
+   # Set other environment variables and load cluster modules
+   module load MiniZinc/2.4.3
+    ```
+3. Create a benchmarking script. This script will contain the configuration of
+   where the instance file is located, what MiniZinc/Solver configurations to
+   run for every instance, and how the benchmark runner itself should be
+   configured. The script mainly consists of a call to `schedule` in
+   `mzn_bench`. For example a benchmarking script that runs Gecode and
    Chuffed for 20 minutes might look like this:
 
-```python
-from datetime import timedelta
-from pathlib import Path
+   ```python
+   from datetime import timedelta
+   from pathlib import Path
 
-import minizinc
+   import minizinc
 
-from minizinc_slurm import Configuration, schedule
+   from mzn_bench import Configuration, schedule
 
-schedule(
-    instances=Path("./instances.csv"),
-    timeout=timedelta(minutes=20),
-    configurations=[
-        Configuration(name="Gecode", solver=minizinc.Solver.lookup("gecode")),
-        Configuration(name="Chuffed", solver=minizinc.Solver.lookup("chuffed")),
-    ],
-    nodelist=["critical001"],
-)
-```
+   schedule(
+       instances=Path("./instances.csv"),
+       timeout=timedelta(minutes=20),
+       configurations=[
+           Configuration(name="Gecode", solver=minizinc.Solver.lookup("gecode")),
+           Configuration(name="Chuffed", solver=minizinc.Solver.lookup("chuffed")),
+       ],
+       nodelist=["critical001"],
+   )
+   ```
 
 These are all the possible arguments to `schedule`:
 
@@ -105,14 +109,14 @@ A `Configuration` object has the following attributes:
 ## Schedule SLURM jobs
 
 The job now has to be started on the cluster with the right number of tasks
-(one for every instance/solver combination). Luckily, the MiniZinc SLURM
-benchmarking script that you've created in the previous step should take care
-of all of this. So once we ensure that our environment is ready for our
-benchmark, we can execute our script and our job will be scheduled.
+(one for every instance/solver combination). Luckily, the benchmarking script
+that you've created in the previous step should take care of all of this.
+So once we ensure that our environment is ready for ou benchmark, we can
+execute our script and our job will be scheduled.
 
 For example, if we had created a script `bench_env.sh` with our benchmarking
-environment and a script `start_bench.py` with our MiniZinc SLURM `schedule`
-call, then the following code should schedule our job:
+environment and a script `start_bench.py` with our `schedule` call, then the
+following code should schedule our job:
 ```bash
 source bench_env.sh
 python start_bench.py
@@ -136,28 +140,79 @@ repository contains some scripts that might be helpful in locating and
 formatting the information that you need. Some scripts might be used directly
 while other might need some customising to fit your purpose. Note that these
 scripts might require some extra dependencies. For this reason, these scripts
-are not expected to work unless this package is installed as `pip install
-git+https://github.com/Dekker1/minizinc-slurm#egg=minizinc_slurm[scripts]`.
+are not expected to work unless this package is installed as
+`pip install mzn-bench[scripts]`.
 This allows us to install a minimal version on the running cluster and this
 more complete version locally while processing the data.
 
 ### General aggregation
 
-The following scripts can help gather the raw `*_stats.yml`/`*_sol.yml` files and combine
-them for further use:
+The following scripts can help gather the raw `*_stats.yml`/`*_sol.yml` files 
+and combine them for further use:
 
-- `collect_statistics <result_dir> <statistics.csv>` - This script gathers all
-  statistical information given by MiniZinc and the used solvers and combines
-  them in a single CSV file.
+- `mzn-bench collect-objectives <result_dir> <objectives.csv>` - 
+  This script gathers all objective value information given by MiniZinc and the
+  used solvers and combines it into a single CSV file.
+- `mzn-bench collect-statistics <result_dir> <statistics.csv>` - 
+  This script gathers all statistical information given by MiniZinc and the used
+  solvers and combines it into a single CSV file.
 
 ### Tabulation
 
 The following scripts filter and tabulate specific statistics.
 
-- `report_status <statistics.csv>` - This script will report the number of
-  occurrences of the various solving status of your MiniZinc tasks. Please
-  consult the `-h` flag to display all options.
+- `mzn-bench report-status <statistics.csv>` - This script will report the
+  number of occurrences of the various solving status of your MiniZinc tasks. 
+  Please consult the `-h` flag to display all options.
+
+### Solution checking
+
+The `mzn-bench check-solutions` command takes the solutions output during run
+and feeds them back into the model to check that the result is satisfiable.
+It also stores the objective and satisfiability information to be used when
+checking statuses. The `-c` option can be used to set how many solutions
+to check (zero to check all solutions).
+
+```bash
+# Check three solutions from each instance
+mzn-bench check-solutions -c 3 ./results
+```
+
+This requires the problem `.mzn` and `.dzn` files from the benchmark run to be
+available in order to run the checker. The `--base-dir <DIR>` option can be used
+to specify a root directory relative to which the file names in the
+`*_sol.yml` files are resolved.
+
+### Status checking
+
+The `mzn-bench check-statuses` command takes the results from `check-solutions`
+command above (which must be run first) and then checks for any solvers which
+have either
+- Falsely claimed optimality - where optimality was found by a solver, but a
+  better objective was found elsewhere and verified to be correct.
+- Falsely claimed unsatisfiability - where unsatisfiability was found by a 
+  solver, but another solver has given a correct solution for the instance.
 
 ### Graph generation
 
-*TODO: Not yet Implemented*
+There are a number of plotting helper functions available in
+`mzn_bench_scripts.analysis.plot`. In order to use these, you must enable the
+plotting features with `pip install mzn-bench[plotting]`. These use the
+[Bokeh](https://bokeh.org/) visualisation library to provide interactive plots.
+
+The `read_csv` function returns a tuple of [pandas](https://pandas.pydata.org/)
+data frames containing objective and statistics data for plotting or further
+data analysis.
+
+```py
+from mzn_bench_scripts.analysis.collect import read_csv
+from mzn_bench_scripts.analysis.plot import plot_all_instances
+from bokeh.plotting import show
+
+# Read CSVs generated by mzn-bench collect-result as pandas dataframes
+objs, stats = read_csv("objectives.csv", "statistics.csv")
+
+# Grid plot giving objective values over time, or time to solve
+# (depending on instance type)
+show(plot_all_instances(objs, stats))
+```
