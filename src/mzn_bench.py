@@ -9,7 +9,7 @@ import traceback
 from dataclasses import asdict, dataclass, field, fields
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, NoReturn, Optional
+from typing import Any, Dict, Iterable, NoReturn, Optional
 
 import minizinc
 import ruamel.yaml
