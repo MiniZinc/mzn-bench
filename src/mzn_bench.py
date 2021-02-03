@@ -79,7 +79,7 @@ def schedule(
     job_name: str = "MiniZinc Benchmark",
     cpus_per_task: int = 1,
     memory: int = 4096,
-    debug_slurm: bool = False,
+    debug: bool = False,
     nice: Optional[int] = None,
     wait: bool = False,
 ) -> NoReturn:
@@ -92,7 +92,7 @@ def schedule(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     slurm_output = "/dev/null"
-    if debug_slurm:
+    if debug:
         slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
 
     # Locate this script
