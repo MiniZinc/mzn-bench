@@ -7,9 +7,9 @@ from typing import Iterable
 
 import click
 
-from mzn_bench_scripts.analysis.collect import collect_instances as collect_insts
-from mzn_bench_scripts.analysis.collect import collect_objectives as collect_objs
-from mzn_bench_scripts.analysis.collect import collect_statistics as collect_stats
+from mzn_bench.analysis.collect import collect_instances as collect_insts
+from mzn_bench.analysis.collect import collect_objectives as collect_objs
+from mzn_bench.analysis.collect import collect_statistics as collect_stats
 
 STANDARD_KEYS = [
     "problem",
@@ -153,7 +153,7 @@ def check_solutions(check: int, base_dir: str, dir: str, pytest_args: Iterable[s
 
         args = [
             "-p",
-            "mzn_bench_scripts.pytest.check_solutions",
+            "mzn_bench.pytest.check_solutions",
             "--check",
             str(check),
             "--base-dir",
@@ -183,7 +183,7 @@ def check_statuses(dir: str, pytest_args: Iterable[str]):
     try:
         import pytest
 
-        args = ["-p", "mzn_bench_scripts.pytest.check_statuses", dir]
+        args = ["-p", "mzn_bench.pytest.check_statuses", dir]
         args.extend(pytest_args)
         exit(pytest.main(args))
     except ImportError:
