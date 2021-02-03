@@ -81,6 +81,7 @@ def schedule(
     memory: int = 4096,
     debug_slurm: bool = False,
     nice: Optional[int] = None,
+    wait: bool = False,
 ) -> NoReturn:
 
     # Count number of instances
@@ -116,6 +117,8 @@ def schedule(
     ]
     if nice is not None:
         cmd.append(f"--nice={nice}")
+    if wait:
+        cmd.append(f"--wait")
     cmd.extend(
         [
             str(this_script.resolve()),

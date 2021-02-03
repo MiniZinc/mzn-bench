@@ -5,24 +5,24 @@ of MiniZinc instance using MiniZinc Python. The process is split into several
 steps to be easily customisable to different kinds of possible benchmarks.
 
 > Currently, the only supported way of running benchmarks is through
-  [SLURM](https://slurm.schedmd.com/). Other methods may become available in the
-  future.
+> [SLURM](https://slurm.schedmd.com/). Other methods may become available in the
+> future.
 
 ## Preparation
 
-1. Create a CSV file for the MiniZinc instances containing *problem*, *model*,
-   *data_file*. If you store the instances in the MiniZinc benchmarks
+1. Create a CSV file for the MiniZinc instances containing _problem_, _model_,
+   _data_file_. If you store the instances in the MiniZinc benchmarks
    repository structure, then you can use the `mzn-bench collect-instances`
    command:
    ```bash
    mzn-bench collect-instances <directory> > instances.csv
    ```
 2. Instantiate a benchmarking environment. This environment should at least
-   contain a Python virtual environment with *mzn-bench* and your benchmarking
-   scripts, but you can also set up environmental variables, like `PATH`, and 
+   contain a Python virtual environment with _mzn-bench_ and your benchmarking
+   scripts, but you can also set up environmental variables, like `PATH`, and
    load cluster modules. The following script, `bench_env.sh`,
-   provides an example environment that can be loaded using `source
-   bench_env.sh`:
+   provides an example environment that can be loaded using `source bench_env.sh`:
+
    ```bash
    if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
        >&2 echo "Remember: you need to run me as 'source ${0}', not execute it!"
@@ -40,7 +40,8 @@ steps to be easily customisable to different kinds of possible benchmarks.
 
    # Set other environment variables and load cluster modules
    module load MiniZinc/2.4.3
-    ```
+   ```
+
 3. Create a benchmarking script. This script will contain the configuration of
    where the instance file is located, what MiniZinc/Solver configurations to
    run for every instance, and how the benchmark runner itself should be
@@ -83,6 +84,8 @@ These are all the possible arguments to `schedule`:
 - `memory: int = 4096` - The maximum memory used for each task.
 - `debug_slurm: bool = False` - Directly capture the output of individual jobs
   and store them in a `./logs/` directory.
+- `wait: bool = False` - The scheduling process will wait for all jobs to
+  finish.
 
 A `Configuration` object has the following attributes:
 
@@ -103,8 +106,7 @@ A `Configuration` object has the following attributes:
   added when using a specific Configuration. Internally this will be used by
   MiniZinc Python's `__setitem__` method on the generated instances. If data
   needs the value of an identifier internal to MiniZinc, then please use an
-  `DZNExpression` object (e.g., `{"preferred_encoding":
-  DZNExpression("UNARY")}`).
+  `DZNExpression` object (e.g., `{"preferred_encoding": DZNExpression("UNARY")}`).
 
 ## Schedule SLURM jobs
 
@@ -117,10 +119,12 @@ execute our script and our job will be scheduled.
 For example, if we had created a script `bench_env.sh` with our benchmarking
 environment and a script `start_bench.py` with our `schedule` call, then the
 following code should schedule our job:
+
 ```bash
 source bench_env.sh
 python start_bench.py
 ```
+
 You can keep track of the status of your job using the `squeue` command.
 
 **WARNING:** Once the job has started the CSV file containing the instances and
@@ -147,13 +151,13 @@ more complete version locally while processing the data.
 
 ### General aggregation
 
-The following scripts can help gather the raw `*_stats.yml`/`*_sol.yml` files 
+The following scripts can help gather the raw `*_stats.yml`/`*_sol.yml` files
 and combine them for further use:
 
-- `mzn-bench collect-objectives <result_dir> <objectives.csv>` - 
+- `mzn-bench collect-objectives <result_dir> <objectives.csv>` -
   This script gathers all objective value information given by MiniZinc and the
   used solvers and combines it into a single CSV file.
-- `mzn-bench collect-statistics <result_dir> <statistics.csv>` - 
+- `mzn-bench collect-statistics <result_dir> <statistics.csv>` -
   This script gathers all statistical information given by MiniZinc and the used
   solvers and combines it into a single CSV file.
 
@@ -162,7 +166,7 @@ and combine them for further use:
 The following scripts filter and tabulate specific statistics.
 
 - `mzn-bench report-status <statistics.csv>` - This script will report the
-  number of occurrences of the various solving status of your MiniZinc tasks. 
+  number of occurrences of the various solving status of your MiniZinc tasks.
   Please consult the `-h` flag to display all options.
 
 ### Solution checking
@@ -188,9 +192,10 @@ to specify a root directory relative to which the file names in the
 The `mzn-bench check-statuses` command takes the results from `check-solutions`
 command above (which must be run first) and then checks for any solvers which
 have either
+
 - Falsely claimed optimality - where optimality was found by a solver, but a
   better objective was found elsewhere and verified to be correct.
-- Falsely claimed unsatisfiability - where unsatisfiability was found by a 
+- Falsely claimed unsatisfiability - where unsatisfiability was found by a
   solver, but another solver has given a correct solution for the instance.
 
 ### Graph generation
