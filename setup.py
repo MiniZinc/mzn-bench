@@ -17,7 +17,6 @@ setup(
         "Source": "https://github.com/MiniZinc/mzn-bench",
     },
     packages=find_packages(where="src"),
-    py_modules=["mzn_bench"],
     package_dir={"": "src"},
     install_requires=[
         "minizinc",
