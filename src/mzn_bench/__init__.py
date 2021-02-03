@@ -1,1 +1,1 @@
-from .mzn_slurm import schedule
+from .mzn_slurm import schedule, Configuration, DZNExpression

@@ -35,6 +35,6 @@ setup(
     },
     entry_points="""
         [console_scripts]
-        mzn-bench = mzn_bench_scripts.cli:main
+        mzn-bench = mzn_bench.cli:main
     """,
 )
