@@ -82,7 +82,7 @@ These are all the possible arguments to `schedule`:
 - `job_name: str = "MiniZinc Benchmark"` - The SLURM job name.
 - `cpus_per_task: int = 1` - The number of CPU cores required for each task.
 - `memory: int = 4096` - The maximum memory used for each task.
-- `debug_slurm: bool = False` - Directly capture the output of individual jobs
+- `debug: bool = False` - Directly capture the output of individual jobs
   and store them in a `./logs/` directory.
 - `wait: bool = False` - The scheduling process will wait for all jobs to
   finish.
