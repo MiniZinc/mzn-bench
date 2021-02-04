@@ -11,6 +11,11 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional
 
+if os.environ.get("MZN_DEBUG", False):
+    import logging
+
+    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
 import minizinc
 import ruamel.yaml
 
@@ -91,10 +96,6 @@ def schedule(
     # Create output_dir if it does not exist
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    slurm_output = "/dev/null"
-    if debug:
-        slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
-
     # Locate this script
     this_script = Path(os.path.realpath(__file__))
 
@@ -104,6 +105,11 @@ def schedule(
         [conf.to_dict() for conf in configurations], cls=_JSONEnc
     )
     env["MZN_SLURM_TIMEOUT"] = str(int(timeout / timedelta(milliseconds=1)))
+
+    slurm_output = "/dev/null"
+    if debug:
+        slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
+        env["MZN_DEBUG"] = True
 
     cmd = [
         "sbatch",
