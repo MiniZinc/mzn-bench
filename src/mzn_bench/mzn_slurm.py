@@ -11,7 +11,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional
 
-if os.environ.get("MZN_DEBUG", False):
+if os.environ.get("MZN_DEBUG", "OFF") == "ON":
     import logging
 
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
@@ -109,7 +109,7 @@ def schedule(
     slurm_output = "/dev/null"
     if debug:
         slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
-        env["MZN_DEBUG"] = True
+        env["MZN_DEBUG"] = "ON"
 
     cmd = [
         "sbatch",
