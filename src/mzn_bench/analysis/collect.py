@@ -68,4 +68,5 @@ def read_csv(sols: str, stats: str):
     stats_df = pd.read_csv(stats)
     sols_df.data_file = sols_df.data_file.fillna("")
     stats_df.data_file = stats_df.data_file.fillna("")
+    stats_df = stats_df[(stats_df.status.eq("SATISFIED") | stats_df.status.eq("OPTIMAL_SOLUTION"))]
     return sols_df, stats_df
