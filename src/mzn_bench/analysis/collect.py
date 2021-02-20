@@ -17,14 +17,14 @@ def collect_instances(benchmarks_location: str):
                             datafiles += 1
                             yield {
                                 "problem": problem,
-                                "model": Path(root) / name,
-                                "data_file": Path(nroot) / nname,
+                                "model": Path(root).absolute() / name,
+                                "data_file": Path(nroot).absolute() / nname,
                             }
 
                 if datafiles == 0:
                     yield {
                         "problem": problem,
-                        "model": Path(root) / name,
+                        "model": Path(root).absolute() / name,
                         "data_file": None,
                     }
 
