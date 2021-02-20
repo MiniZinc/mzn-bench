@@ -30,11 +30,16 @@ class StatsItem(pytest.Item):
         self.stats = stats
 
     def runtest(self):
-        method = Method[self.stats["method"].upper()]
         status = Status[self.stats["status"]]
         key = "{}_{}_{}".format(
             self.stats["problem"], self.stats["model"], self.stats["data_file"]
         )
+        if status is Status.ERROR:
+            pytest.skip(
+                "skipping {} as status was ERROR".format(key)
+            )
+
+        method = Method[self.stats["method"].upper()]
         if status is Status.UNSATISFIABLE:
             is_satisfiable = self.config.cache.get("sat/" + key, False)
             assert not is_satisfiable, "Incorrect UNSAT status"
