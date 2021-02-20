@@ -26,7 +26,7 @@ def report_status(
 
             seen_status.add(row["status"])
             key = tuple(key)
-            time = float(row["time"])
+            time = float(0 if row["time"] == "" else row["time"])
             if key not in table:
                 table[key] = {row["status"]: [time]}
             elif row["status"] not in table[tuple(key)]:
