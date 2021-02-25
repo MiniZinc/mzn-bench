@@ -59,7 +59,16 @@ class Configuration:
         elif identifier.endswith(".msc"):
             obj["solver"] = minizinc.Solver.load(identifier)
         else:
+            # TODO: version tags should be handled correctly by MiniZinc Python
+            version = None
+            if "@" in identifier:
+                split = identifier.split("@")
+                assert len(split) == 2
+                identifier = split[0]
+                version = split[1]
             obj["solver"] = minizinc.Solver.lookup(identifier)
+            if version is not None:
+                assert obj["solver"].version == version
 
         if obj["minizinc"] is not None:
             obj["minizinc"] = Path(obj["minizinc"])
