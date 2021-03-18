@@ -244,5 +244,46 @@ def report_status(
         exit(1)
 
 
+@main.command()
+@click.argument(
+    "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
+)
+@click.argument(
+    "from_conf",
+    metavar="from_conf",
+)
+@click.argument(
+    "to_conf",
+    metavar="to_conf",
+)
+@click.option(
+    "--time-delta",
+    default=0.1,
+    type=float,
+    help="Fraction of time change considered to be significant",
+)
+@click.option(
+    "--obj-delta",
+    default=0.1,
+    type=float,
+    help="Fraction of objective value change considered to be significant",
+)
+def compare_configurations(
+    statistics: str,
+    from_conf: str,
+    to_conf: str,
+    time_delta: float,
+    obj_delta: float,
+):
+    """Show all significant performance changes between two configurations"""
+    try:
+        from .analysis.analyse_changes import compare_configurations as fn
+
+        print(fn(Path(statistics), from_conf, to_conf, time_delta, obj_delta))
+    except ImportError:
+        click.echo(IMPORT_ERROR, err=True)
+        exit(1)
+
+
 if __name__ == "__main__":
     main()
