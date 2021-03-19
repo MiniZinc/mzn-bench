@@ -5,6 +5,27 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# The difference in objectives for them to be considered the same
+SAME_DELTA = 1e-6
+# Status changes (from, to) considered positive
+POSITIVE_STATUS_CHANGES = [
+    ("ERROR", "SATISFIED"),
+    ("ERROR", "UNSATISFIABLE"),
+    ("ERROR", "OPTIMAL_SOLUTION"),
+    ("ERROR", "UNKNOWN"),
+    ("UNKNOWN", "SATISFIED"),
+    ("UNKNOWN", "UNSATISFIABLE"),
+    ("UNKNOWN", "OPTIMAL_SOLUTION"),
+    ("SATISFIED", "OPTIMAL_SOLUTION"),
+]
+# Status changes (from, to) considered a conflict
+CONFLICT_STATUS_CHANGES = [
+    ("UNSATISFIABLE", "SATISFIED"),
+    ("SATISFIED", "UNSATISFIABLE"),
+    ("UNSATISFIABLE", "OPTIMAL_SOLUTION"),
+    ("OPTIMAL_SOLUTION", "UNSATISFIABLE"),
+]
+
 
 @dataclass
 class PerformanceChanges:
@@ -18,6 +39,8 @@ class PerformanceChanges:
     time_changes: list[tuple[str, str, float, float]] = field(default_factory=list)
     # model, datafile, from_obj, to_obj, maximise?
     obj_changes: list[tuple[str, str, float, float, bool]] = field(default_factory=list)
+    # model, datafile, from_obj, to_obj, maximise?
+    obj_conflicts: list[tuple[str, str, float, float]] = field(default_factory=list)
     # model, datafile
     missing_instances: list[tuple[str, str]] = field(default_factory=list)
 
@@ -25,24 +48,6 @@ class PerformanceChanges:
         n_status_changes = sum([len(li) for key, li in self.status_changes.items()])
         n_pos_status_changes = 0
         n_bad_status_changes = 0
-
-        pos_status_changes = [
-            ("ERROR", "SATISFIED"),
-            ("ERROR", "UNSATISFIABLE"),
-            ("ERROR", "OPTIMAL_SOLUTION"),
-            ("ERROR", "UNKNOWN"),
-            ("UNKNOWN", "SATISFIED"),
-            ("UNKNOWN", "UNSATISFIABLE"),
-            ("UNKNOWN", "OPTIMAL_SOLUTION"),
-            ("SATISFIED", "OPTIMAL_SOLUTION"),
-        ]
-
-        conflicting_status_changes = [
-            ("UNSATISFIABLE", "SATISFIED"),
-            ("SATISFIED", "UNSATISFIABLE"),
-            ("UNSATISFIABLE", "OPTIMAL_SOLUTION"),
-            ("OPTIMAL_SOLUTION", "UNSATISFIABLE"),
-        ]
 
         stat_bad_str = ""
         stat_pos_str = ""
@@ -52,10 +57,10 @@ class PerformanceChanges:
             s = f"{change[0]} -> {change[1]}:\n"
             for i in li:
                 s += f"  - {i[0]} {i[1]}\n"
-            if change in conflicting_status_changes:
+            if change in CONFLICT_STATUS_CHANGES:
                 n_bad_status_changes += len(li)
                 stat_bad_str += s
-            elif change in pos_status_changes:
+            elif change in POSITIVE_STATUS_CHANGES:
                 n_pos_status_changes += len(li)
                 stat_pos_str += s
             else:
@@ -75,16 +80,30 @@ class PerformanceChanges:
                 "Negative Status Changes:\n------------------------\n" + stat_neg_str
             )
 
-        output = (
-            f"Summary:\n"
-            f"========\n"
+        output = f"Summary:\n" f"========\n"
+        if len(self.missing_instances) > 0:
+            output += f"- Missing instances: {len(self.missing_instances)}\n"
+        if len(self.obj_conflicts) > 0:
+            output += f"- Objective conflicts: {len(self.obj_conflicts)}\n"
+        output += (
             f"- Status Changes: {n_status_changes} ({'conflicts: ' + str(n_bad_status_changes) + ', ' if n_bad_status_changes > 0 else ''}positive: {n_pos_status_changes})\n"
             f"- Runtime Changes: {len(self.time_changes)} (positive: {len([x for x in self.time_changes if (x[3] - x[2]) / x[2] < 0])})\n"
             f"- Objective Changes: {len(self.obj_changes)} (posxive: {len([x for x in self.obj_changes if (1 if x[4] else -1) * (x[3] - x[2]) / x[2] > 0])})\n"
         )
-        if len(self.missing_instances) > 0:
-            f"- Missing instances: {len(self.missing_instances)}\n"
         output += "\n\n"
+
+        if len(self.missing_instances) > 0:
+            output += "Missing Instances:\n==================\n"
+            for it in self.missing_instances:
+                output += f"- {it[0]} {it[1]}"
+            output += "\n"
+        if len(self.obj_conflicts) > 0:
+            output += (
+                f"Objective Conflicts (±{SAME_DELTA}):\n=============================\n"
+            )
+            for it in self.obj_conflicts:
+                output += f"- ({it[2]} != {it[3]}) {it[0]} {it[1]}\n"
+            output += "\n"
 
         output += (
             f"Status Changes:\n===============\n{stat_bad_str}\n{stat_neg_str}\n{stat_pos_str}\n"
@@ -109,13 +128,9 @@ class PerformanceChanges:
             )
             for it in obj_li:
                 output += f"- ({(it[3] - it[2]) / it[2] * 100:.1f}%: {'MAX' if it[4] else 'MIN'} {it[2]:.2f} -> {it[3]:.2f}) {it[0]} {it[1]}\n"
+            output += "\n"
 
-        if len(self.missing_instances) > 0:
-            output += "Missing Instances:\n==================\n"
-            for it in self.missing_instances:
-                output += f"- {it[0]} {it[1]}"
-
-        return output
+        return output.strip()
 
 
 def compare_configurations(
@@ -153,7 +168,12 @@ def compare_configurations(
             from_val[0] == "SATISFIED" and from_val[3] == "satisfy"
         ):
             time_change = (to_val[1] - from_val[1]) / from_val[1]
-            if abs(time_change) > time_delta:
+            if (
+                from_val[0] == "OPTIMAL_SOLUTION"
+                and abs(from_val[2] - to_val[2]) > SAME_DELTA
+            ):
+                changes.obj_conflicts.append((key[0], key[1], from_val[2], to_val[2]))
+            elif abs(time_change) > time_delta:
                 changes.time_changes.append((key[0], key[1], from_val[1], to_val[1]))
         elif from_val[0] == "SATISFIED" and from_val[3] != "satisfy":
             obj_change = (to_val[2] - from_val[2]) / from_val[2]
