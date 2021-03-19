@@ -45,6 +45,8 @@ class PerformanceChanges:
     missing_instances: list[tuple[str, str]] = field(default_factory=list)
 
     def __str__(self):
+        obj_sort_key = lambda it: (1 if it[4] else -1) * (it[3] - it[2]) / it[2]
+
         n_status_changes = sum([len(li) for key, li in self.status_changes.items()])
         n_pos_status_changes = 0
         n_bad_status_changes = 0
@@ -88,7 +90,7 @@ class PerformanceChanges:
         output += (
             f"- Status Changes: {n_status_changes} ({'conflicts: ' + str(n_bad_status_changes) + ', ' if n_bad_status_changes > 0 else ''}positive: {n_pos_status_changes})\n"
             f"- Runtime Changes: {len(self.time_changes)} (positive: {len([x for x in self.time_changes if (x[3] - x[2]) / x[2] < 0])})\n"
-            f"- Objective Changes: {len(self.obj_changes)} (posxive: {len([x for x in self.obj_changes if (1 if x[4] else -1) * (x[3] - x[2]) / x[2] > 0])})\n"
+            f"- Objective Changes: {len(self.obj_changes)} (posxive: {len([x for x in self.obj_changes if obj_sort_key(x) > 0])})\n"
         )
         output += "\n\n"
 
@@ -116,17 +118,25 @@ class PerformanceChanges:
             time_li = sorted(
                 self.time_changes, key=lambda it: (it[3] - it[2]) / it[2], reverse=True
             )
+            line = (time_li[0][3] - time_li[0][2]) / time_li[0][2] < 0
             for it in time_li:
+                if not line and (it[3] - it[2]) / it[2] < 0:
+                    output += "-------------------------\n"
+                    line = True
                 output += f"- ({(it[3] - it[2]) / it[2] * 100:.1f}%: {it[2]:.1f}s -> {it[3]:.1f}s) {it[0]} {it[1]}\n"
             output += "\n"
 
         if len(self.obj_changes) > 0:
-            output += f"Objective Changes (>±{self.obj_delta * 100:.1f}%):\n=========================\n"
+            output += f"Objective Changes (>±{self.obj_delta * 100:.1f}%):\n============================\n"
             obj_li = sorted(
                 self.obj_changes,
-                key=lambda it: (1 if it[4] else -1) * (it[3] - it[2]) / it[2],
+                key=obj_sort_key,
             )
+            line = obj_sort_key(obj_li[0]) > 0
             for it in obj_li:
+                if not line and obj_sort_key(it) > 0:
+                    output += "----------------------------\n"
+                    line = True
                 output += f"- ({(it[3] - it[2]) / it[2] * 100:.1f}%: {'MAX' if it[4] else 'MIN'} {it[2]:.2f} -> {it[3]:.2f}) {it[0]} {it[1]}\n"
             output += "\n"
 
