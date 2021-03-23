@@ -177,7 +177,8 @@ def compare_configurations(
         elif from_val[0] == "OPTIMAL_SOLUTION" or (
             from_val[0] == "SATISFIED" and from_val[3] == "satisfy"
         ):
-            time_change = (to_val[1] - from_val[1]) / from_val[1]
+            time_div = from_val[1] if from_val[1] != 0.0 else 0.1
+            time_change = (to_val[1] - from_val[1]) / time_div
             if (
                 from_val[0] == "OPTIMAL_SOLUTION"
                 and abs(from_val[2] - to_val[2]) > SAME_DELTA
@@ -186,7 +187,8 @@ def compare_configurations(
             elif abs(time_change) > time_delta:
                 changes.time_changes.append((key[0], key[1], from_val[1], to_val[1]))
         elif from_val[0] == "SATISFIED" and from_val[3] != "satisfy":
-            obj_change = (to_val[2] - from_val[2]) / from_val[2]
+            obj_div = from_val[2] if from_val[2] != 0.0 else 0.1
+            obj_change = (to_val[2] - from_val[2]) / obj_div
             if abs(obj_change) > obj_delta:
                 changes.obj_changes.append(
                     (key[0], key[1], from_val[2], to_val[2], from_val[3] == "maximize")
