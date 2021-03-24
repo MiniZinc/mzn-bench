@@ -268,18 +268,29 @@ def report_status(
     type=float,
     help="Fraction of objective value change considered to be significant",
 )
+@click.option(
+    "--output-mode",
+    type=click.Choice(["", "json"], case_sensitive=False),
+    default="",
+    help="The format used in the output.",
+)
 def compare_configurations(
     statistics: str,
     from_conf: str,
     to_conf: str,
     time_delta: float,
     obj_delta: float,
+    output_mode: str,
 ):
     """Show all significant performance changes between two configurations"""
     try:
         from .analysis.analyse_changes import compare_configurations as fn
 
-        print(fn(Path(statistics), from_conf, to_conf, time_delta, obj_delta))
+        result = fn(Path(statistics), from_conf, to_conf, time_delta, obj_delta)
+        if output_mode != "":
+            result = result.serialise(output_mode)
+
+        print(result)
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)
         exit(1)
