@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import csv
+import json
 import math
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -39,7 +40,7 @@ class PerformanceChanges:
     time_changes: list[tuple[str, str, float, float]] = field(default_factory=list)
     # model, datafile, from_obj, to_obj, maximise?
     obj_changes: list[tuple[str, str, float, float, bool]] = field(default_factory=list)
-    # model, datafile, from_obj, to_obj, maximise?
+    # model, datafile, from_obj, to_obj
     obj_conflicts: list[tuple[str, str, float, float]] = field(default_factory=list)
     # model, datafile
     missing_instances: list[tuple[str, str]] = field(default_factory=list)
@@ -141,6 +142,60 @@ class PerformanceChanges:
             output += "\n"
 
         return output.strip()
+
+    def serialise(self, method: str) -> str:
+        as_dict = {
+            "status_changes": [
+                {
+                    "model": model,
+                    "data": data,
+                    "status_before": from_stat,
+                    "status_after": to_stat,
+                }
+                for (from_stat, to_stat), li in self.status_changes.items()
+                for model, data in li
+            ],
+            "time_delta": self.time_delta,
+            "time_changes": [
+                {
+                    "model": model,
+                    "data": data,
+                    "time_before": from_time,
+                    "time_after": to_time,
+                }
+                for (model, data, from_time, to_time) in self.time_changes
+            ],
+            "obj_delta": self.obj_delta,
+            "obj_changes": [
+                {
+                    "model": model,
+                    "data": data,
+                    "obj_before": from_obj,
+                    "obj_after": to_obj,
+                    "maximise": is_max,
+                }
+                for (model, data, from_obj, to_obj, is_max) in self.obj_changes
+            ],
+            "obj_conflicts": [
+                {
+                    "model": model,
+                    "data": data,
+                    "obj_before": from_obj,
+                    "obj_after": to_obj,
+                }
+                for (model, data, from_obj, to_obj) in self.obj_conflicts
+            ],
+            "missing_instances": [
+                {
+                    "model": model,
+                    "data": data,
+                }
+                for (model, data) in self.missing_instances
+            ],
+        }
+
+        assert method == "json"
+        return json.dumps(as_dict)
 
 
 def compare_configurations(
