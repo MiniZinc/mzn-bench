@@ -165,9 +165,13 @@ and combine them for further use:
 
 The following scripts filter and tabulate specific statistics.
 
-- `mzn-bench report-status <statistics.csv>` - This script will report the
+- `mzn-bench report-status <statistics.csv>` - This command will report the
   number of occurrences of the various solving status of your MiniZinc tasks.
   Please consult the `-h` flag to display all options.
+- `mzn-bench compare-configurations <statistics.csv> <before_conf> <after_conf>` - This command reports on the differences of the achieved
+  results between two configurations (differences in status, runtime, and
+  objective). You can adjust the changes deemed significant with the
+  `--time-delta` and `--objective-delta` flag. You can use the `--output-mode json` option to ensure the output can be easily parsed by other programs.
 
 ### Solution checking
 
