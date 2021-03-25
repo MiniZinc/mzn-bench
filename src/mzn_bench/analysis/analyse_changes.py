@@ -91,7 +91,7 @@ class PerformanceChanges:
         output += (
             f"- Status Changes: {n_status_changes} ({'conflicts: ' + str(n_bad_status_changes) + ', ' if n_bad_status_changes > 0 else ''}positive: {n_pos_status_changes})\n"
             f"- Runtime Changes: {len(self.time_changes)} (positive: {len([x for x in self.time_changes if (x[3] - x[2]) / x[2] < 0])})\n"
-            f"- Objective Changes: {len(self.obj_changes)} (posxive: {len([x for x in self.obj_changes if obj_sort_key(x) > 0])})\n"
+            f"- Objective Changes: {len(self.obj_changes)} (positive: {len([x for x in self.obj_changes if obj_sort_key(x) > 0])})\n"
         )
         output += "\n\n"
 
