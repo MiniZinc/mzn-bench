@@ -270,8 +270,8 @@ def report_status(
 )
 @click.option(
     "--output-mode",
-    type=click.Choice(["", "json"], case_sensitive=False),
-    default="",
+    type=click.Choice(["human", "json"], case_sensitive=False),
+    default="human",
     help="The format used in the output.",
 )
 def compare_configurations(
@@ -287,7 +287,7 @@ def compare_configurations(
         from .analysis.analyse_changes import compare_configurations as fn
 
         result = fn(Path(statistics), from_conf, to_conf, time_delta, obj_delta)
-        if output_mode != "":
+        if output_mode != "human":
             result = result.serialise(output_mode)
 
         print(result)
