@@ -4,6 +4,15 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 
 import ruamel.yaml
 
+STANDARD_KEYS = [
+    "configuration",
+    "problem",
+    "model",
+    "data_file",
+    "status",
+    "time",
+]
+
 
 def collect_instances(benchmarks_location: str):
     for root, _, files in os.walk(benchmarks_location):
@@ -30,7 +39,8 @@ def collect_instances(benchmarks_location: str):
 
 
 def collect_objectives(dirs: Iterable[Union[str, Path]]) -> List[Dict[str, Any]]:
-    base_keys = ["configuration", "problem", "model", "data_file", "time"]
+    base_keys = STANDARD_KEYS.copy()
+    base_keys.remove("status")  # No need to output SAT every time
     for dir in dirs:
         path = (dir if isinstance(dir, Path) else Path(dir)).resolve()
         for file in path.rglob("*_sol.yml"):
@@ -49,7 +59,7 @@ def collect_objectives(dirs: Iterable[Union[str, Path]]) -> List[Dict[str, Any]]
 def collect_statistics(
     dirs: Iterable[Union[str, Path]], filter_stats: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
-    base_keys = ["configuration", "problem", "model", "data_file", "time"]
+    base_keys = STANDARD_KEYS
     for dir in dirs:
         path = (dir if isinstance(dir, Path) else Path(dir)).resolve()
         for file in path.rglob("*_stats.yml"):

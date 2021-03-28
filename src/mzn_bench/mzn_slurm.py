@@ -34,8 +34,12 @@ class Configuration:
 
     def to_dict(self):
         obj = asdict(self)
-        obj["solver"] = self.solver.output_configuration()
-        obj["sol_ident"] = self.solver._identifier
+        if self.solver._identifier is not None:
+            obj["solver"] = ""
+            obj["sol_ident"] = self.solver._identifier
+        else:
+            obj["solver"] = self.solver.output_configuration()
+            obj["sol_ident"] = ""
         if self.minizinc is not None:
             obj["minizinc"] = str(self.minizinc)
         return obj
@@ -43,10 +47,29 @@ class Configuration:
     @classmethod
     def from_dict(cls, obj):
         field_names = set(f.name for f in fields(minizinc.Solver))
-        obj["solver"] = minizinc.Solver(
-            **{k: v for k, v in json.loads(obj["solver"]).items() if k in field_names}
-        )
-        obj["solver"]._identifier = obj.pop("sol_ident")
+        identifier = obj.pop("sol_ident")
+        if identifier == "":
+            obj["solver"] = minizinc.Solver(
+                **{
+                    k: v
+                    for k, v in json.loads(obj["solver"]).items()
+                    if k in field_names
+                }
+            )
+        elif identifier.endswith(".msc"):
+            obj["solver"] = minizinc.Solver.load(identifier)
+        else:
+            # TODO: version tags should be handled correctly by MiniZinc Python
+            version = None
+            if "@" in identifier:
+                split = identifier.split("@")
+                assert len(split) == 2
+                identifier = split[0]
+                version = split[1]
+            obj["solver"] = minizinc.Solver.lookup(identifier)
+            if version is not None:
+                assert obj["solver"].version == version
+
         if obj["minizinc"] is not None:
             obj["minizinc"] = Path(obj["minizinc"])
         return cls(**obj)

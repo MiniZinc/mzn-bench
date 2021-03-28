@@ -10,16 +10,8 @@ import click
 from mzn_bench.analysis.collect import collect_instances as collect_insts
 from mzn_bench.analysis.collect import collect_objectives as collect_objs
 from mzn_bench.analysis.collect import collect_statistics as collect_stats
+from mzn_bench.analysis.collect import STANDARD_KEYS
 
-STANDARD_KEYS = [
-    "problem",
-    "model",
-    "data_file",
-    "configuration",
-    "status",
-    "time",
-    "run",
-]
 IMPORT_ERROR = """This feature is not supported in minimal minizinc-slurm environments.
 
 Please install using `pip install mzn-bench[scripts]`
@@ -85,14 +77,26 @@ def collect_objectives(dirs: Iterable[str], out_file: str):
     count = 0
     with Path(out_file).open(mode="w") as file:
         writer = csv.DictWriter(
-            file, STANDARD_KEYS + ["objective"], dialect="unix", extrasaction="ignore"
+            file,
+            STANDARD_KEYS + ["run", "objective"],
+            dialect="unix",
+            extrasaction="ignore",
         )
         writer.writeheader()
+        last_keys = ("", "", "", "")
         for objective in collect_objs(dirs):
+            keys = (
+                objective["configuration"],
+                objective["problem"],
+                objective["model"],
+                objective["data_file"],
+            )
             writer.writerow(objective)
-            count += 1
+            if last_keys != keys:
+                count += 1
+                last_keys = keys
 
-    click.echo(f"Processed {count} files.", err=True)
+    click.echo(f"Processed objectives from {count} files.", err=True)
 
 
 @main.command()
@@ -116,7 +120,7 @@ def collect_statistics(dirs: Iterable[str], out_file: str):
         writer.writeheader()
         for stat in statistics:
             writer.writerow(stat)
-    click.echo(f"Processed {len(statistics)} files.", err=True)
+    click.echo(f"Processed statistics from {len(statistics)} files.", err=True)
 
 
 @main.command()
