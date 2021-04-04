@@ -66,6 +66,7 @@ def plot_all_instances(
                     configurations=configurations,
                     factors=factors,
                     by=by,
+                    x_range_end=stats[stats.problem.eq(problem)].time.max(),
                 )
                 for model in stats[stats.problem.eq(problem)].model.unique()
                 for data in stats[stats.problem.eq(problem)].data_file.unique()
@@ -84,6 +85,7 @@ def plot_instance(
     configurations: list = None,
     factors: list = None,
     by: tuple = None,
+    x_range_end: float = None,
 ) -> Figure:
     """Plots objective data for an optimisation problem instance, and run time
        data for a satisfaction problem instance.
@@ -113,6 +115,9 @@ def plot_instance(
         if df_stats.data_file.iloc[0] == ""
         else df_stats.data_file.iloc[0],
     )
+
+    if x_range_end is None:
+        x_range_end = df_stats.time.max()
 
     if df_stats.method.eq("satisfy").any() or df_sols.empty:
         if factors is None:
@@ -147,6 +152,7 @@ def plot_instance(
             source=source,
         )
         p.x_range.start = 0
+        p.x_range.end = x_range_end
         p.xaxis.axis_label = "Time (s)"
         p.yaxis.axis_label = "Configuration"
         return p
@@ -250,7 +256,7 @@ def plot_instance(
                     )
                 )
         p.x_range.start = 0
-        p.x_range.end = df_stats.time.max()
+        p.x_range.end = x_range_end
         p.xaxis.axis_label = "Time (s)"
         p.yaxis.axis_label = "Objective"
         p.legend.click_policy = "hide"
