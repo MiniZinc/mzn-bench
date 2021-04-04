@@ -9,7 +9,7 @@ from bokeh.models.ranges import FactorRange
 from bokeh.models.tools import HoverTool
 from bokeh.palettes import Palette, Spectral5
 from bokeh.plotting import Figure, figure, gridplot
-from bokeh.transform import factor_cmap
+from bokeh.transform import factor_cmap, factor_hatch
 
 def collect_factors(stats: pd.DataFrame, by=None):
     if by is None:
@@ -39,7 +39,7 @@ def collect_factors(stats: pd.DataFrame, by=None):
     return (factors, by)
 
 def plot_all_instances(
-    sols: pd.DataFrame, stats: pd.DataFrame, palette: Palette = Spectral5
+        sols: pd.DataFrame, stats: pd.DataFrame, palette: Palette = Spectral5, config: dict = DEFAULT_CONFIG
 ) -> Figure:
     """Plot all instances in a grid
 
@@ -67,6 +67,7 @@ def plot_all_instances(
                     factors=factors,
                     by=by,
                     x_range_end=stats[stats.problem.eq(problem)].time.max(),
+                    config=config,
                 )
                 for model in stats[stats.problem.eq(problem)].model.unique()
                 for data in stats[stats.problem.eq(problem)].data_file.unique()
@@ -86,6 +87,7 @@ def plot_instance(
     factors: list = None,
     by: tuple = None,
     x_range_end: float = None,
+    config: dict = DEFAULT_CONFIG
 ) -> Figure:
     """Plots objective data for an optimisation problem instance, and run time
        data for a satisfaction problem instance.
@@ -146,6 +148,12 @@ def plot_instance(
                 "_".join(by),
                 palette=palette,
                 factors=factors,
+                start=len(by) - 1,
+            ),
+            hatch_pattern=factor_hatch(
+                "status",
+                patterns=(' ', ' ', 'x', '@'),
+                factors=("SATISFIABLE", "UNSATISFIABLE", "UNKNOWN", "ERROR"),
                 start=len(by) - 1,
             ),
             line_color=None,
