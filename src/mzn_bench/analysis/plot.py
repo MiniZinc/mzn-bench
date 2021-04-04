@@ -1,6 +1,7 @@
 import math
 from itertools import cycle
 
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from bokeh.models import CDSView, ColumnDataSource, GroupFilter
@@ -113,9 +114,7 @@ def plot_instance(
 
     instance = "{} ({})".format(
         df_stats.problem.iloc[0],
-        df_stats.model.iloc[0]
-        if df_stats.data_file.iloc[0] == ""
-        else df_stats.data_file.iloc[0],
+        Path(df_stats.model.iloc[0] if df_stats.data_file.iloc[0] == "" else df_stats.data_file.iloc[0]).name,
     )
 
     if x_range_end is None:
