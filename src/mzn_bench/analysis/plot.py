@@ -2,6 +2,7 @@ import math
 from itertools import cycle
 
 import pandas as pd
+import numpy as np
 from bokeh.models import CDSView, ColumnDataSource, GroupFilter
 from bokeh.models.annotations import Span
 from bokeh.models.ranges import FactorRange
@@ -10,6 +11,32 @@ from bokeh.palettes import Palette, Spectral5
 from bokeh.plotting import Figure, figure, gridplot
 from bokeh.transform import factor_cmap
 
+def collect_factors(stats: pd.DataFrame, by=None):
+    if by is None:
+        if stats.configuration.nunique() == 1:
+            # Group by run only
+            by = ["run"]
+        elif stats.run.nunique() == 1:
+            # Group by configuration only
+            by = ["configuration"]
+        else:
+            # Group by both
+            by = ["configuration", "run"]
+    
+    if by == ["run"]:
+        factors = stats.run.unique()
+    elif by == ["configuration"]:
+        factors = stats.configuration.unique()
+    elif by == ["configuration","run"]:
+        factors = [
+            (c, r)
+            for c in stats.configuration.unique()
+            for r in stats.run.unique()
+        ]
+    else:
+        raise Error("Given `by` argument wasn't a valid grouping")
+
+    return (factors, by)
 
 def plot_all_instances(
     sols: pd.DataFrame, stats: pd.DataFrame, palette: Palette = Spectral5
@@ -24,30 +51,39 @@ def plot_all_instances(
     Returns:
         Figure: The plotting figure
     """
+    factors,by=collect_factors(stats)
+    configurations,_=collect_factors(stats, by=["configuration"])
+
     return gridplot(
-        [
-            [
+            [[
                 plot_instance(
                     sols,
                     stats,
+                    problem,
                     model,
                     data,
                     palette,
+                    configurations=configurations,
+                    factors=factors,
+                    by=by,
                 )
                 for model in stats[stats.problem.eq(problem)].model.unique()
                 for data in stats[stats.problem.eq(problem)].data_file.unique()
             ]
             for problem in stats.problem.unique()
-        ]
-    )
+        ])
 
 
 def plot_instance(
     sols: pd.DataFrame,
     stats: pd.DataFrame,
+    problem: str,
     model: str,
     data: str = "",
     palette: Palette = Spectral5,
+    configurations: list = None,
+    factors: list = None,
+    by: tuple = None,
 ) -> Figure:
     """Plots objective data for an optimisation problem instance, and run time
        data for a satisfaction problem instance.
@@ -69,7 +105,6 @@ def plot_instance(
         (sols.model.eq(model) | sols.problem.eq(model)) & sols.data_file.eq(data)
     ]
     if df_stats.data_file.nunique() != 1:
-        print(stats[stats.model.eq(model)])
         raise ValueError("Could not determine unique instance for plotting.")
 
     instance = "{} ({})".format(
@@ -80,24 +115,10 @@ def plot_instance(
     )
 
     if df_stats.method.eq("satisfy").any() or df_sols.empty:
-        # Plot run time graph
-        if df_stats.configuration.nunique() == 1:
-            # Group by run only
-            y = df_stats.run.unique()
-            by = ["run"]
-        elif df_stats.run.nunique() == 1:
-            # Group by configuration only
-            y = df_stats.configuration.unique()
-            by = ["configuration"]
-        else:
-            # Group by both
-            y = [
-                (c, r)
-                for c in df_stats.configuration.unique()
-                for r in df_stats.run.unique()
-            ]
-            by = ["configuration", "run"]
+        if factors is None:
+            factors,by=collect_factors(stats)
 
+        # Plot run time graph
         tooltips = [
             ("configuration", "@" + "_".join(by)),
             ("flatTime", "@flatTime"),
@@ -107,7 +128,7 @@ def plot_instance(
         ]
         source = ColumnDataSource(df_stats.groupby(by=by).first())
         p = figure(
-            y_range=FactorRange(*y),
+            y_range=FactorRange(*factors),
             title="Run time for {}".format(instance),
             tooltips=tooltips,
         )
@@ -119,7 +140,7 @@ def plot_instance(
             fill_color=factor_cmap(
                 "_".join(by),
                 palette=palette,
-                factors=df_stats[by[-1]].unique(),
+                factors=factors,
                 start=len(by) - 1,
             ),
             line_color=None,
@@ -130,6 +151,9 @@ def plot_instance(
         p.yaxis.axis_label = "Configuration"
         return p
     else:
+        if configurations is None:
+            configurations,_=collect_factors(stats, by=["configurations"])
+            
         # Plot objective graph
         source = ColumnDataSource(df_sols)
         tooltips = [
@@ -141,7 +165,7 @@ def plot_instance(
 
         p = figure(title="Objective value for {}".format(instance))
         colors = cycle(palette)
-        for configuration in df_stats.configuration.unique():
+        for configuration in configurations:
             color = next(colors)
             dashes = cycle([[], [6], [2, 4], [2, 4, 6, 4], [6, 4, 2, 4]])
             for run, line_dash in zip(df_stats.run.unique(), dashes):
