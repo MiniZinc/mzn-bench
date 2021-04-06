@@ -12,6 +12,11 @@ from bokeh.palettes import Palette, Spectral5
 from bokeh.plotting import Figure, figure, gridplot
 from bokeh.transform import factor_cmap, factor_hatch
 
+DEFAULT_CONFIG = {
+        "include_flat_time": True,
+        "x_range_start": 0.1
+        }
+
 def collect_factors(stats: pd.DataFrame, by=None):
     if by is None:
         if stats.configuration.nunique() == 1:
@@ -40,7 +45,10 @@ def collect_factors(stats: pd.DataFrame, by=None):
     return (factors, by)
 
 def plot_all_instances(
-        sols: pd.DataFrame, stats: pd.DataFrame, palette: Palette = Spectral5, config: dict = DEFAULT_CONFIG
+        sols: pd.DataFrame,
+        stats: pd.DataFrame,
+        palette: Palette = Spectral5,
+        config: dict = DEFAULT_CONFIG,
 ) -> Figure:
     """Plot all instances in a grid
 
@@ -140,8 +148,8 @@ def plot_instance(
         )
         p.hbar(
             y="_".join(by),
-            left="flatTime",
-            right="time",
+            left="flatTime" if config["include_flat_time"] else config["x_range_start"],
+            right="time" if config["include_flat_time"] else "solveTime",
             height=0.5,
             fill_color=factor_cmap(
                 "_".join(by),
@@ -158,7 +166,7 @@ def plot_instance(
             line_color=None,
             source=source,
         )
-        p.x_range.start = 0
+        p.x_range.start = config["x_range_start"] # 0.1
         p.x_range.end = x_range_end
         p.xaxis.axis_label = "Time (s)"
         p.yaxis.axis_label = "Configuration"
@@ -262,7 +270,7 @@ def plot_instance(
                         point_policy="follow_mouse",
                     )
                 )
-        p.x_range.start = 0
+        p.x_range.start = config["x_range_start"]
         p.x_range.end = x_range_end
         p.xaxis.axis_label = "Time (s)"
         p.yaxis.axis_label = "Objective"
