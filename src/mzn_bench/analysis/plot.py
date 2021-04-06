@@ -10,7 +10,7 @@ from bokeh.models.ranges import FactorRange
 from bokeh.models.tools import HoverTool
 from bokeh.palettes import Palette, Spectral5
 from bokeh.plotting import Figure, figure, gridplot
-from bokeh.transform import factor_cmap, factor_hatch
+from bokeh.transform import factor_cmap, factor_hatch, cumsum
 
 DEFAULT_CONFIG = {
         "include_flat_time": True,
@@ -63,26 +63,92 @@ def plot_all_instances(
     factors,by=collect_factors(stats)
     configurations,_=collect_factors(stats, by=["configuration"])
 
-    return gridplot(
-            [[
-                plot_instance(
-                    sols,
-                    stats,
-                    problem,
-                    model,
-                    data,
-                    palette,
-                    configurations=configurations,
-                    factors=factors,
-                    by=by,
-                    x_range_end=stats[stats.problem.eq(problem)].time.max(),
-                    config=config,
-                )
-                for model in stats[stats.problem.eq(problem)].model.unique()
-                for data in stats[stats.problem.eq(problem)].data_file.unique()
+    return gridplot([
+        [
+            plot_comparison(
+                sols,
+                stats,
+                problem,
+                model,
+                palette,
+                ),
+            *[ plot_instance(
+                sols,
+                stats,
+                problem,
+                model,
+                data,
+                palette,
+                configurations=configurations,
+                factors=factors,
+                by=by,
+                x_range_end=stats[stats.problem.eq(problem)].time.max(),
+                config=config,
+                ) for data in stats[stats.problem.eq(problem)].data_file.unique() ]
             ]
-            for problem in stats.problem.unique()
+        for problem in stats.problem.unique()
+        for model in stats[stats.problem.eq(problem)].model.unique()
         ])
+
+def plot_comparison(
+    sols: pd.DataFrame,
+    stats: pd.DataFrame,
+    problem: str,
+    model: str,
+    # data: str = "",
+    palette: Palette = Spectral5,
+    ) -> Figure:
+    """Plot comparison over solveTime over multiple instances"""
+    
+
+    df_stats = stats[
+        (stats.model.eq(model) | stats.problem.eq(model))
+    ]
+    df_sols = sols[
+        (sols.model.eq(model) | sols.problem.eq(model))
+    ]
+    
+
+    configurations,by=collect_factors(df_stats, by=["configuration"])
+    
+    df_stats=df_stats[df_stats.status.ne("ERROR") & df_stats.status.ne("UNKNOWN")]
+    df_stats['data_file'] = df_stats['data_file'].apply(lambda x: int(str(x).split("-")[-1][:-4]))
+    
+    source = ColumnDataSource(df_stats)
+    tooltips = [
+        ("configuration", "@configuration"),
+        ("run", "@run"),
+        ("data_file", "@data_file"),
+        ("solveTime", "@solveTime"),
+    ]
+
+    
+    p = figure(
+            title="Comparison for {}".format(problem),
+            # x_axis_type="log",
+            # y_axis_type="log",
+            )
+
+    colors = cycle(palette)
+    for configuration in configurations:
+        view = CDSView(
+                source=source,
+                filters=[
+                    GroupFilter(column_name="configuration", group=configuration),
+                    ],
+                )
+        color=next(colors)
+        glyph = p.circle(
+                x="data_file",
+                y=cumsum("solveTime", include_zero=True),
+                color=color,
+                legend_label=configuration,
+                source=source,
+                view=view,
+            )
+        p.add_tools(HoverTool(renderers=[glyph], tooltips=tooltips))
+
+    return p
 
 
 def plot_instance(
