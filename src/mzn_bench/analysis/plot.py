@@ -40,7 +40,7 @@ def collect_factors(stats: pd.DataFrame, by=None):
             for r in stats.run.unique()
         ]
     else:
-        raise Error("Given `by` argument wasn't a valid grouping")
+        raise RuntimeError("Given `by` argument wasn't a valid grouping")
 
     return (factors, by)
 
