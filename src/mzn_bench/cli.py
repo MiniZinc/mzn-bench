@@ -207,9 +207,9 @@ def check_statuses(dir: str, pytest_args: Iterable[str]):
     help="Create a row for every problem",
 )
 @click.option(
-    "--avg-time",
-    is_flag=True,
-    help="Show average runtime in the table",
+    "--avg",
+    type=click.Choice(["time", "solveTime", "flatTime"]),
+    help="Show average of the given stat in the table",
 )
 @click.option(
     "--output-mode",
@@ -224,7 +224,7 @@ def report_status(
     per_model: bool,
     per_problem: bool,
     statistics: str,
-    avg_time: bool,
+    avg: str,
     output_mode: str,
 ):
     """Aggregate status of MiniZinc instance runs into a table
@@ -236,7 +236,7 @@ def report_status(
 
         print(
             report_status_fn(
-                per_model, per_problem, Path(statistics), avg_time, output_mode
+                per_model, per_problem, Path(statistics), avg, output_mode
             )
         )
     except ImportError:
