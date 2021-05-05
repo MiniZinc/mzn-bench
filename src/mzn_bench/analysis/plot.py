@@ -32,6 +32,7 @@ def plot_all_instances(
                     stats,
                     model,
                     data,
+                    palette,
                 )
                 for model in stats[stats.problem.eq(problem)].model.unique()
                 for data in stats[stats.problem.eq(problem)].data_file.unique()
