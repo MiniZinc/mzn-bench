@@ -5,7 +5,7 @@ from tabulate import tabulate
 
 
 def report_status(
-    per_problem: bool, per_model: bool, per_instance: bool, statistics: Path, avg_time: bool, tablefmt: str
+    per_problem: bool, per_model: bool, per_instance: bool, statistics: Path, avg_key: str, tablefmt: str
 ):
     keys = ["configuration"]
     if per_problem:
@@ -31,7 +31,7 @@ def report_status(
 
             seen_status.add(row["status"])
             key = tuple(key)
-            time = float(0 if row["time"] == "" else row["time"])
+            time = float(0 if row[avg_key] == "" else row[avg_key])
             if key not in table:
                 table[key] = {row["status"]: [time]}
             elif row["status"] not in table[tuple(key)]:
@@ -47,7 +47,7 @@ def report_status(
             list(key)
             + [
                 f"{len(row[s])} ({sum(row[s]) / len(row[s]) :.2f}s)"
-                if avg_time and s in row
+                if avg_key is not None and s in row
                 else str(len(row.get(s, [])))
                 for s in seen_status
             ]

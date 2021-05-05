@@ -8,6 +8,7 @@ import time
 import traceback
 from dataclasses import asdict, dataclass, field, fields
 from datetime import timedelta
+import pathlib
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional
 
@@ -174,7 +175,11 @@ async def run_instance(
             driver = minizinc.CLI.CLIDriver(config.minizinc)
         instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
         if data is not None:
-            instance.add_file(data, parse_data=False)
+            if type(data) is pathlib.PosixPath:
+                instance.add_file(data, parse_data=False)
+            else:
+                instance.add_string(data)
+
         is_satisfaction = instance.method == minizinc.Method.SATISFY
 
         for key, value in config.extra_data.items():
@@ -257,9 +262,13 @@ if __name__ == "__main__":
 
         data = None
         if selected_instance[2] != "":
-            data = Path(selected_instance[2])
-            if not data.is_absolute():
-                data = instances.parent / data
+            instance=selected_instance[2]
+            if instance[-4:] == ".dzn":
+                data = Path(instance)
+                if not data.is_absolute():
+                    data = instances.parent / data
+            else:
+                data = instance
 
         stat_base = {
             "problem": selected_instance[0],

@@ -197,14 +197,14 @@ def check_statuses(dir: str, pytest_args: Iterable[str]):
 
 @main.command()
 @click.option(
-    "--per-model",
-    is_flag=True,
-    help="Create a row for every model",
-)
-@click.option(
     "--per-problem",
     is_flag=True,
     help="Create a row for every problem",
+)
+@click.option(
+    "--per-model",
+    is_flag=True,
+    help="Create a row for every model",
 )
 @click.option(
     "--per-instance",
@@ -212,9 +212,9 @@ def check_statuses(dir: str, pytest_args: Iterable[str]):
     help="Create a row for every instance / data-file",
 )
 @click.option(
-    "--avg-time",
-    is_flag=True,
-    help="Show average runtime in the table",
+    "--avg",
+    type=click.Choice(["time", "solveTime", "flatTime"]),
+    help="Show average of the given stat in the table",
 )
 @click.option(
     "--output-mode",
@@ -230,7 +230,7 @@ def report_status(
     per_model: bool,
     per_instance: bool,
     statistics: str,
-    avg_time: bool,
+    avg: str,
     output_mode: str,
 ):
     """Aggregate status of MiniZinc instance runs into a table
@@ -242,9 +242,61 @@ def report_status(
 
         print(
             report_status_fn(
-                per_problem, per_model, per_instance, Path(statistics), avg_time, output_mode
+                per_problem, per_model, per_instance, Path(statistics), avg, output_mode
             )
         )
+    except ImportError:
+        click.echo(IMPORT_ERROR, err=True)
+        exit(1)
+
+
+@main.command()
+@click.argument(
+    "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
+)
+@click.argument(
+    "from_conf",
+    metavar="from_conf",
+)
+@click.argument(
+    "to_conf",
+    metavar="to_conf",
+)
+@click.option(
+    "--time-delta",
+    default=0.1,
+    type=float,
+    help="Fraction of time change considered to be significant",
+)
+@click.option(
+    "--obj-delta",
+    default=0.1,
+    type=float,
+    help="Fraction of objective value change considered to be significant",
+)
+@click.option(
+    "--output-mode",
+    type=click.Choice(["human", "json"], case_sensitive=False),
+    default="human",
+    help="The format used in the output.",
+)
+def compare_configurations(
+    statistics: str,
+    from_conf: str,
+    to_conf: str,
+    time_delta: float,
+    obj_delta: float,
+    output_mode: str,
+):
+    """Show all significant performance changes between two configurations"""
+    try:
+        from .analysis.analyse_changes import compare_configurations as fn
+
+        result = fn(Path(statistics), from_conf, to_conf, time_delta, obj_delta)
+        if output_mode != "human":
+            result = result.serialise(output_mode)
+
+        print(result)
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)
         exit(1)
