@@ -31,7 +31,7 @@ def report_status(
 
             seen_status.add(row["status"])
             key = tuple(key)
-            time = float(0 if row[avg_key] == "" else row[avg_key])
+            time = float(0 if avg_key is None or row[avg_key] == "" else row[avg_key])
             if key not in table:
                 table[key] = {row["status"]: [time]}
             elif row["status"] not in table[tuple(key)]:
