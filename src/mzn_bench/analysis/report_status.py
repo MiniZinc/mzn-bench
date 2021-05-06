@@ -8,6 +8,7 @@ def report_status(
         per_model: bool, per_problem: bool, statistics: Path, avg: str, tablefmt: str
 ):
     keys = ["configuration"]
+    
     if per_model:
         keys.append("model")
     if per_problem:
@@ -26,7 +27,9 @@ def report_status(
 
             seen_status.add(row["status"])
             key = tuple(key)
-            time = float(0 if avg is None or row["avg"] == "" else row["avg"])
+            
+            avg_value = row.get(avg, 0)
+            time = float(0 if avg_value == "" else avg_value)
             if key not in table:
                 table[key] = {row["status"]: [time]}
             elif row["status"] not in table[tuple(key)]:
