@@ -46,6 +46,9 @@ class Configuration:
 
     @classmethod
     def from_dict(cls, obj):
+        if obj["minizinc"] is not None:
+            obj["minizinc"] = Path(obj["minizinc"])
+            minizinc.CLI.CLIDriver(obj["minizinc"]).make_default()
         field_names = set(f.name for f in fields(minizinc.Solver))
         identifier = obj.pop("sol_ident")
         if identifier == "":
@@ -70,8 +73,6 @@ class Configuration:
             if version is not None:
                 assert obj["solver"].version == version
 
-        if obj["minizinc"] is not None:
-            obj["minizinc"] = Path(obj["minizinc"])
         return cls(**obj)
 
 
