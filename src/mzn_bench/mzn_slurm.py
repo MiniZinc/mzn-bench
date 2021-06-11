@@ -230,10 +230,7 @@ if __name__ == "__main__":
         output_dir = Path(sys.argv[2])
         task_id = int(os.environ["SLURM_ARRAY_TASK_ID"]) - 1
         timeout = timedelta(milliseconds=int(os.environ["MZN_SLURM_TIMEOUT"]))
-        configurations = [
-            Configuration.from_dict(conf)
-            for conf in json.loads(os.environ["MZN_SLURM_CONFIGS"], cls=_JSONDec)
-        ]
+        configurations = json.loads(os.environ["MZN_SLURM_CONFIGS"], cls=_JSONDec)
 
         # Select instance and configuration based on SLURM_ARRAY_TASK_ID
         with open(instances) as instances_file:
@@ -245,8 +242,15 @@ if __name__ == "__main__":
                 task_id = task_id - len(configurations)
                 row = row + 1
             selected_instance = next(reader)
-            config = configurations[task_id]
-            filename = f"{row}_{config.name}"
+
+        # Deserialise Configuration
+        config = configurations[task_id]
+        # TODO: workaround because we might not know the solver in the system MiniZinc
+        if config["minizinc"] is not None:
+            minizinc.CLI.CLIDriver(Path(config["minizinc"])).make_default()
+        config = Configuration.from_dict(config)
+
+        filename = f"{row}_{config.name}"
 
         # Process instance
         problem = selected_instance[0]
