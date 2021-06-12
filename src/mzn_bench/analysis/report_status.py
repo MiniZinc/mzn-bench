@@ -5,10 +5,10 @@ from tabulate import tabulate
 
 
 def report_status(
-        per_model: bool, per_problem: bool, statistics: Path, avg: str, tablefmt: str
+    per_model: bool, per_problem: bool, statistics: Path, avg: str, tablefmt: str
 ):
     keys = ["configuration"]
-    
+
     if per_model:
         keys.append("model")
     if per_problem:
@@ -27,7 +27,7 @@ def report_status(
 
             seen_status.add(row["status"])
             key = tuple(key)
-            
+
             avg_value = row.get(avg, 0)
             time = float(0 if avg_value == "" else avg_value)
             if key not in table:

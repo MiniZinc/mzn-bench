@@ -235,9 +235,7 @@ def report_status(
         from .analysis.report_status import report_status as report_status_fn
 
         print(
-            report_status_fn(
-                per_model, per_problem, Path(statistics), avg, output_mode
-            )
+            report_status_fn(per_model, per_problem, Path(statistics), avg, output_mode)
         )
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)

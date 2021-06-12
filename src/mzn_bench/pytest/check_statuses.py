@@ -35,9 +35,7 @@ class StatsItem(pytest.Item):
             self.stats["problem"], self.stats["model"], self.stats["data_file"]
         )
         if status is Status.ERROR:
-            pytest.skip(
-                "skipping {} as status was ERROR".format(key)
-            )
+            pytest.skip("skipping {} as status was ERROR".format(key))
 
         method = Method[self.stats["method"].upper()]
         if status is Status.UNSATISFIABLE:
