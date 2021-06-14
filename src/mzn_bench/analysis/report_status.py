@@ -73,7 +73,8 @@ def report_status(
     ]
 
     output = []
-    for key, row in table.items():
+    for key in sorted(table):
+        row = table[key]
         line = list(key)
         for s in status_order:
             if s in seen_status:
