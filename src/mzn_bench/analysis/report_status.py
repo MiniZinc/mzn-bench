@@ -2,6 +2,14 @@ import csv
 from pathlib import Path
 
 from tabulate import tabulate
+from minizinc.result import Status
+
+
+# TODO: Maybe this should be included in MiniZinc Python
+def status_from_str(s: str) -> Status:
+    for k, v in Status.__members__.items():
+        if k == s.upper():
+            return v
 
 
 def report_status(
@@ -25,32 +33,67 @@ def report_status(
             if per_problem:
                 key.append(row["problem"])
 
-            seen_status.add(row["status"])
+            status = status_from_str(row["status"])
+            seen_status.add(status)
+
             key = tuple(key)
+            if key not in table:
+                table[key] = dict()
 
             avg_value = row.get(avg, 0)
             time = float(0 if avg_value == "" else avg_value)
-            if key not in table:
-                table[key] = {row["status"]: [time]}
-            elif row["status"] not in table[tuple(key)]:
-                table[key][row["status"]] = [time]
+            if avg and status in [Status.OPTIMAL_SOLUTION, Status.UNSATISFIABLE]:
+                if status not in table[key]:
+                    table[key][status] = [time]
+                else:
+                    table[key][status].append(time)
+            elif status == Status.SATISFIED:
+                if avg:
+                    entry = table[key].get(status, (0, []))
+                    if row["method"] == "satisfy":
+                        entry[1].append(time)
+                    table[key][status] = (entry[0] + 1, entry[1])
+                else:
+                    entry = table[key].get(status, (0, 0))
+                    table[key][status] = (
+                        entry[0] + 1,
+                        entry[1] + int(row["method"] == "satisfy"),
+                    )
             else:
-                table[key][row["status"]].append(time)
+                entry = table[key].get(status, 0)
+                table[key][status] = entry + 1
 
-    seen_status = list(seen_status)
-    seen_status.sort(reverse=True)
+    status_order = [
+        Status.OPTIMAL_SOLUTION,
+        Status.UNSATISFIABLE,
+        Status.SATISFIED,
+        Status.UNKNOWN,
+        Status.UNBOUNDED,
+        Status.ERROR,
+    ]
+
+    output = []
+    for key, row in table.items():
+        line = list(key)
+        for s in status_order:
+            if s in seen_status:
+                if s not in row:
+                    o = 0
+                elif avg != "" and s in [
+                    Status.OPTIMAL_SOLUTION,
+                    Status.UNSATISFIABLE,
+                ]:
+                    o = f"{len(row[s])} ({sum(row[s]) / len(row[s]) :.2f}s)"
+                elif avg != "" and s == Status.SATISFIED:
+                    o = f"{row[s][0]} + {len(row[s][1])} ({sum(row[s][1]) / len(row[s][1]) :.2f}s)"
+                else:
+                    o = row[s]
+                line.append(o)
+
+        output.append(line)
 
     return tabulate(
-        [
-            list(key)
-            + [
-                f"{len(row[s])} ({sum(row[s]) / len(row[s]) :.2f}s)"
-                if avg is not None and s in row
-                else str(len(row.get(s, [])))
-                for s in seen_status
-            ]
-            for key, row in table.items()
-        ],
-        headers=(keys + seen_status),
+        output,
+        headers=(keys + [s for s in status_order if s in seen_status]),
         tablefmt=tablefmt,
     )
