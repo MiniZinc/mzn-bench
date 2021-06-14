@@ -80,13 +80,18 @@ def report_status(
             if s in seen_status:
                 if s not in row:
                     o = 0
-                elif avg != "" and s in [
+                elif avg and s in [
                     Status.OPTIMAL_SOLUTION,
                     Status.UNSATISFIABLE,
                 ]:
                     o = f"{len(row[s])} ({sum(row[s]) / len(row[s]) :.2f}s)"
-                elif avg != "" and s == Status.SATISFIED:
-                    o = f"{row[s][0]} + {len(row[s][1])} ({sum(row[s][1]) / len(row[s][1]) :.2f}s)"
+                elif s == Status.SATISFIED:
+                    if avg:
+                        o = f"{row[s][0]-len(row[s][1])} + {len(row[s][1])}"
+                        if len(row[s][1]) > 0:
+                            o += f" ({sum(row[s][1]) / len(row[s][1]) :.2f}s)"
+                    else:
+                        o = f"{row[s][0]-row[s][1]} + {row[s][1]}"
                 else:
                     o = row[s]
                 line.append(o)
