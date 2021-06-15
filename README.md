@@ -167,6 +167,9 @@ The following scripts filter and tabulate specific statistics.
 
 - `mzn-bench report-status <statistics.csv>` - This command will report the
   number of occurrences of the various solving status of your MiniZinc tasks.
+  Note that the number of satisfied instances is reported as `A + B`, where `A`
+  is the number of optimisation instances that reach a solution not proven
+  optimal and `B` is the number of satisfaction instance finding a solution.
   Please consult the `-h` flag to display all options.
 - `mzn-bench compare-configurations <statistics.csv> <before_conf> <after_conf>` - This command reports on the differences of the achieved
   results between two configurations (differences in status, runtime, and
