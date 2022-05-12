@@ -19,7 +19,7 @@ setup(
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=[
-        "minizinc",
+        "minizinc>=0.7,<1",
         "ruamel.yaml",
         "click>=7,<8",
     ],

@@ -171,7 +171,8 @@ async def run_instance(
     try:
         driver = minizinc.default_driver
         if config.minizinc is not None:
-            driver = minizinc.CLI.CLIDriver(config.minizinc)
+            assert config.minizinc.exists()
+            driver = minizinc.Driver(config.minizinc)
         instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
         if data is not None:
             instance.add_file(data, parse_data=False)
@@ -247,7 +248,8 @@ if __name__ == "__main__":
         config = configurations[task_id]
         # TODO: workaround because we might not know the solver in the system MiniZinc
         if config["minizinc"] is not None:
-            minizinc.CLI.CLIDriver(Path(config["minizinc"])).make_default()
+            assert config["minizinc"].exists()
+            minizinc.Driver(Path(config["minizinc"])).make_default()
         config = Configuration.from_dict(config)
 
         filename = f"{row}_{config.name}"
