@@ -14,7 +14,8 @@ STANDARD_KEYS = [
 ]
 
 
-def collect_instances(benchmarks_location: str):
+def collect_instances(benchmarks_location: str, shared_data: Optional[str]):
+    shared = Path(shared_data) if shared_data is not None else None
     for root, _, files in os.walk(benchmarks_location):
         for name in files:
             if name.endswith(".mzn"):
@@ -22,19 +23,23 @@ def collect_instances(benchmarks_location: str):
                 datafiles = 0
                 for nroot, _, nfiles in os.walk(root):
                     for nname in nfiles:
-                        if nname.endswith(".dzn") or nname.endswith(".json"):
+                        data = Path(nroot) / nname
+                        if (
+                            data.suffix == ".dzn" or data.suffix == ".json"
+                        ) and data != shared:
                             datafiles += 1
                             yield {
                                 "problem": problem,
                                 "model": Path(root) / name,
-                                "data_file": Path(nroot) / nname,
+                                "data_file": str(data)
+                                + (":" + str(shared) if shared is not None else ""),
                             }
 
                 if datafiles == 0:
                     yield {
                         "problem": problem,
                         "model": Path(root) / name,
-                        "data_file": None,
+                        "data_file": str(shared) if shared is not None else "",
                     }
 
 

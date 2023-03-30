@@ -3,7 +3,7 @@
 import csv
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 import click
 
@@ -34,8 +34,14 @@ def main():
 
 
 @main.command()
+@click.option(
+    "--shared-data",
+    default=None,
+    help="Additional data to be shared by all instances",
+    type=click.Path(exists=True, dir_okay=False),
+)
 @click.argument("benchmarks_location", type=click.Path(exists=True, file_okay=True))
-def collect_instances(benchmarks_location: str):
+def collect_instances(shared_data: Optional[str], benchmarks_location: str):
     """This script collect MiniZinc instances and outputs them in a csv format
 
     The MiniZinc instances are expected to be organised according to the MiniZinc
@@ -57,7 +63,7 @@ def collect_instances(benchmarks_location: str):
         dialect="unix",
     )
     writer.writeheader()
-    for instance in collect_insts(benchmarks_location):
+    for instance in collect_insts(benchmarks_location, shared_data):
         writer.writerow(instance)
         instances += 1
     click.echo(f"Nr. Instances = {instances}", err=True)
