@@ -111,7 +111,6 @@ def schedule(
     nice: Optional[int] = None,
     wait: bool = False,
 ) -> NoReturn:
-
     # Count number of instances
     assert instances.exists()
     num_instances = sum(1 for line in instances.open()) - 1
@@ -174,8 +173,8 @@ async def run_instance(
             assert config.minizinc.exists()
             driver = minizinc.Driver(config.minizinc)
         instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
-        if data is not None:
-            instance.add_file(data, parse_data=False)
+        for path in data:
+            instance.add_file(path, parse_data=False)
         is_satisfaction = instance.method == minizinc.Method.SATISFY
 
         for key, value in config.extra_data.items():
@@ -261,11 +260,13 @@ if __name__ == "__main__":
         if not model.is_absolute():
             model = instances.parent / model
 
-        data = None
-        if selected_instance[2] != "":
-            data = Path(selected_instance[2])
-            if not data.is_absolute():
-                data = instances.parent / data
+        data = []
+        for file in selected_instance[2].split(":"):
+            if file != "":
+                path = Path(selected_instance[2])
+                if not path.is_absolute():
+                    path = instances.parent / file
+                data.append(path)
 
         stat_base = {
             "problem": selected_instance[0],
