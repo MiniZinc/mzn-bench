@@ -211,15 +211,15 @@ def compare_configurations(
             if row["configuration"] == from_conf:
                 from_stats[(row["model"], row["data_file"])] = (
                     row["status"],
-                    float(0 if row["time"] == "" else row["time"]),
-                    float(math.nan if row["objective"] == "" else row["objective"]),
+                    float(row["time"]),
+                    float(row.get("objective",math.nan)),
                     row["method"],
                 )
             elif row["configuration"] == to_conf:
                 to_stats[(row["model"], row["data_file"])] = (
                     row["status"],
-                    float(0 if row["time"] == "" else row["time"]),
-                    float(math.nan if row["objective"] == "" else row["objective"]),
+                    float(row["time"]),
+                    float(row.get("objective",math.nan)),
                 )
 
     changes = PerformanceChanges(time_delta, obj_delta)
