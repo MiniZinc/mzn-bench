@@ -3,6 +3,7 @@ from typing import Any, Dict
 import pytest
 from minizinc import Method, Status
 from ruamel.yaml import YAML
+from pathlib import Path
 
 yaml = YAML(typ="unsafe")
 
@@ -57,4 +58,4 @@ class StatsItem(pytest.Item):
 
 def pytest_collect_file(parent, path):
     if path.basename.endswith("_stats.yml"):
-        return StatsFile.from_parent(parent, fspath=path)
+        return StatsFile.from_parent(parent, path=Path(path))
