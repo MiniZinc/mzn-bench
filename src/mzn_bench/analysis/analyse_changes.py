@@ -5,7 +5,7 @@ import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple,Dict,List
+from typing import Tuple, Dict, List
 
 # The difference in objectives for them to be considered the same
 SAME_DELTA = 1e-6
