@@ -139,7 +139,7 @@ class SolutionChecker:
         if path.basename.endswith("_sol.yml"):
             return SolFile.from_parent(
                 parent,
-                fspath=path,
+                path=Path(path),
                 checker=self.checker,
                 num_check=self.num_check,
                 base_dir=Path(self.base_dir),
