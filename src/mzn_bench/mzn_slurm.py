@@ -194,7 +194,7 @@ async def run_instance(
                 solution = stat_base.copy()
                 solution["status"] = str(result.status)
                 if "time" in result.statistics:
-                    solution["time"] = result.statistics.pop("time").total_seconds()
+                    solution["time"] = result.statistics.pop("time")
                 if result.solution is not None:
                     solution["solution"] = asdict(result.solution)
                     solution["solution"].pop("_output_item", None)
@@ -247,8 +247,9 @@ if __name__ == "__main__":
         config = configurations[task_id]
         # TODO: workaround because we might not know the solver in the system MiniZinc
         if config["minizinc"] is not None:
-            assert config["minizinc"].exists()
-            minizinc.Driver(Path(config["minizinc"])).make_default()
+            mzn_path = Path(config["minizinc"])
+            assert mzn_path.exists()
+            minizinc.Driver(mzn_path).make_default()
         config = Configuration.from_dict(config)
 
         filename = f"{row}_{config.name}"
