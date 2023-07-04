@@ -5,6 +5,7 @@ import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Tuple,Dict,List
 
 # The difference in objectives for them to be considered the same
 SAME_DELTA = 1e-6
@@ -33,17 +34,17 @@ class PerformanceChanges:
     time_delta: float
     obj_delta: float
     # (from_status, to_status) -> (model, datafile)
-    status_changes: dict[tuple[str, str], list[tuple[str, str]]] = field(
+    status_changes: Dict[Tuple[str, str], List[Tuple[str, str]]] = field(
         default_factory=lambda: defaultdict(list)
     )
     # model, datafile, from_time, to_time
-    time_changes: list[tuple[str, str, float, float]] = field(default_factory=list)
+    time_changes: List[Tuple[str, str, float, float]] = field(default_factory=list)
     # model, datafile, from_obj, to_obj, maximise?
-    obj_changes: list[tuple[str, str, float, float, bool]] = field(default_factory=list)
+    obj_changes: List[Tuple[str, str, float, float, bool]] = field(default_factory=list)
     # model, datafile, from_obj, to_obj
-    obj_conflicts: list[tuple[str, str, float, float]] = field(default_factory=list)
+    obj_conflicts: List[Tuple[str, str, float, float]] = field(default_factory=list)
     # model, datafile
-    missing_instances: list[tuple[str, str]] = field(default_factory=list)
+    missing_instances: List[Tuple[str, str]] = field(default_factory=list)
 
     def __str__(self):
         obj_sort_key = lambda it: (1 if it[4] else -1) * (it[3] - it[2]) / it[2]
