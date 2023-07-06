@@ -198,6 +198,13 @@ class PerformanceChanges:
         assert method == "json"
         return json.dumps(as_dict)
 
+def read_row(row: dict):
+    return (
+        row["status"],
+        float(math.nan if row["time"] == "" else row["time"]),
+        float(row["objective"] if "objective" in row and row["objective"] != "" else math.nan),
+        row["method"],
+    )
 
 def compare_configurations(
     statistics: Path, from_conf: str, to_conf: str, time_delta: float, obj_delta: float
@@ -208,19 +215,11 @@ def compare_configurations(
     with statistics.open() as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
+            key = (row["model"], row["data_file"])
             if row["configuration"] == from_conf:
-                from_stats[(row["model"], row["data_file"])] = (
-                    row["status"],
-                    float(row["time"]),
-                    float(row.get("objective",math.nan)),
-                    row["method"],
-                )
+                from_stats[key] = read_row(row)
             elif row["configuration"] == to_conf:
-                to_stats[(row["model"], row["data_file"])] = (
-                    row["status"],
-                    float(row["time"]),
-                    float(row.get("objective",math.nan)),
-                )
+                to_stats[key] = read_row(row)
 
     changes = PerformanceChanges(time_delta, obj_delta)
 
