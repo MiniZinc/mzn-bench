@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
+import minizinc
 
 import ruamel.yaml
 
