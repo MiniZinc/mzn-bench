@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
 import minizinc
-import ruamel.yaml
+from ruamel.yaml import YAML
+yaml=YAML(typ='unsafe', pure=True)
 
 STANDARD_KEYS = [
     "configuration",
@@ -50,7 +51,7 @@ def collect_objectives(dirs: Iterable[Union[str, Path]]) -> List[Dict[str, Any]]
         path = (dir if isinstance(dir, Path) else Path(dir)).resolve()
         for file in path.rglob("*_sol.yml"):
             with file.open() as fp:
-                sols = ruamel.yaml.load(fp, Loader=ruamel.yaml.Loader)
+                sols = yaml.load(fp)
                 for sol in sols or []:
                     if "solution" not in sol:
                         continue
@@ -69,7 +70,7 @@ def collect_statistics(
         path = (dir if isinstance(dir, Path) else Path(dir)).resolve()
         for file in path.rglob("*_stats.yml"):
             with file.open() as fp:
-                stats = ruamel.yaml.load(fp, Loader=ruamel.yaml.Loader)
+                stats = yaml.load(fp)
                 if filter_stats is not None:
                     stats = {k: stats[k] for k in base_keys + filter_stats}
                 stats["run"] = path.name

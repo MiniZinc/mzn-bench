@@ -80,6 +80,9 @@ def collect_objectives(dirs: Iterable[str], out_file: str):
     OUT_FILE is the output CSV file containing objective data
     """
 
+    collect_objectives_(dirs, out_file)
+
+def collect_objectives_(dirs: Iterable[str], out_file: str):
     count = 0
     with Path(out_file).open(mode="w") as file:
         writer = csv.DictWriter(
@@ -115,7 +118,9 @@ def collect_statistics(dirs: Iterable[str], out_file: str):
     DIRS are directories containing the result YAML files
     OUT_FILE is the CSV file containing aggregated statistics data
     """
+    collect_statistics_(dirs, out_file)
 
+def collect_statistics_(dirs: Iterable[str], out_file: str):
     statistics = list(collect_stats(dirs))
     keys = {key for obj in statistics for key in obj.keys()}
     keys = keys.difference(STANDARD_KEYS)
@@ -158,6 +163,9 @@ def check_solutions(check: int, base_dir: str, dir: str, pytest_args: Iterable[s
     DIR is the directory containing YAML output from minizinc-slurm
     PYTEST_ARGS are passed to the underlying PyTest command
     """
+    check_solutions_(check, base_dir, dir, pytest_args)
+
+def check_solutions_(check: int, base_dir: str, dir: str, pytest_args: Iterable[str]):
     try:
         import pytest
 
@@ -189,7 +197,9 @@ def check_statuses(dir: str, pytest_args: Iterable[str]):
     DIR is the directory containing YAML output from minizinc-slurm
     PYTEST_ARGS are passed to the underlying PyTest command
     """
+    check_statuses_(dir, pytest_args)
 
+def check_statuses_(dir: str, pytest_args: Iterable[str]):
     try:
         import pytest
 
