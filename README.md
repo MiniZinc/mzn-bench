@@ -74,8 +74,8 @@ These are all the possible arguments to `schedule`:
 - `timeout: timedelta` - The timeout set for the MiniZinc process.
 - `configurations: Iterable[Configuration]` - MiniZinc solving configurations
   (see below for details).
-- `nodelist: Iterable[str]` - A list of nodes on which SLURM is allowed to
-  schedule the tasks.
+- `nodelist: Optional[Iterable[str]]` - A list of nodes on which SLURM is allowed to
+  schedule the tasks. If `None`, `mzn-bench` will sequentially solve the instances locally.
 - `output_dir: Path = Path.cwd() / "results"` - The directory in which the raw
   results will be placed. This directory will be created if it does not yet
   exist.
@@ -227,4 +227,12 @@ objs, stats = read_csv("objectives.csv", "statistics.csv")
 # Grid plot giving objective values over time, or time to solve
 # (depending on instance type)
 show(plot_all_instances(objs, stats))
+```
+
+
+### Testing
+Currently, this library is tested using a single end-to-end test which runs most of the pipeline locally (without SLURM).
+
+```
+pytest
 ```
