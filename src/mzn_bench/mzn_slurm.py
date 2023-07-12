@@ -236,11 +236,6 @@ async def run_instance(
     )
 
 
-if __name__ == "__main__":
-    instances = Path(sys.argv[1])
-    output_dir = Path(sys.argv.get(2, Path.home()))
-    main(instances, output_dir)
-
 def main(instances, output_dir):
     filename = "minizinc_slurm"
     try:
@@ -311,3 +306,9 @@ def main(instances, output_dir):
             raise
         file = output_dir / f"{filename}_err.txt"
         file.write_text(f"ERROR: {traceback.format_exc()}")
+
+if __name__ == "__main__":
+    instances = Path(sys.argv[1])
+    output_dir = Path(sys.argv[2]) if len(sys.argv) == 2 else Path.home()
+    main(instances, output_dir)
+
