@@ -6,6 +6,7 @@ import pytest
 from _pytest.config import Config
 from minizinc import Model, Solver, Status
 from minizinc.helpers import check_solution
+import minizinc
 from ruamel.yaml import YAML
 
 yaml = YAML(typ="unsafe")

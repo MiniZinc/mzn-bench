@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass, field, fields
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional
+import minizinc
 from ruamel.yaml import YAML
 
 yaml=YAML(typ="unsafe", pure=True)
@@ -19,7 +20,6 @@ if os.environ.get("MZN_DEBUG", "OFF") == "ON":
 
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-import minizinc
 
 
 @dataclass
@@ -184,7 +184,9 @@ async def run_instance(
         if config.minizinc is not None:
             assert config.minizinc.exists()
             driver = minizinc.Driver(config.minizinc)
-        instance = minizinc.Instance(config.solver, minizinc.Model(model), driver)
+        model=minizinc.Model(model)
+        model.output_type = dict
+        instance = minizinc.Instance(config.solver, model, driver)
         for path in data:
             instance.add_file(path, parse_data=False)
         is_satisfaction = instance.method == minizinc.Method.SATISFY
@@ -208,7 +210,7 @@ async def run_instance(
                 if "time" in result.statistics:
                     solution["time"] = result.statistics.pop("time")
                 if result.solution is not None:
-                    solution["solution"] = asdict(result.solution)
+                    solution["solution"] = result.solution
                     solution["solution"].pop("_output_item", None)
                     solution["solution"].pop("_checker", None)
                 yaml.dump([solution], file)
