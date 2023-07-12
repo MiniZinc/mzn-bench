@@ -9,21 +9,21 @@ from mzn_bench import Configuration, schedule, collect_objectives_, collect_stat
 
 import sys
 def test_run():
-   output_dir="results"
+   output_dir="tests/results"
 
    schedule(
-           instances=Path("./test.csv"),
+           instances=Path("./tests/test.csv"),
            timeout=timedelta(seconds=5),
            configurations=[
                Configuration(name="Gecode", solver=minizinc.Solver.lookup("gecode")),
                Configuration(name="Chuffed", solver=minizinc.Solver.lookup("chuffed")),
                ],
+           output_dir=Path(output_dir),
            nodelist=None  # local runner
            )
     
    collect_objectives_([output_dir], f"{output_dir}/objs.csv")
    collect_statistics_([output_dir], f"{output_dir}/stats.csv")
-
 
    with pytest.raises(SystemExit) as error:
        check_solutions_(0, ".", output_dir, ["-s"])
