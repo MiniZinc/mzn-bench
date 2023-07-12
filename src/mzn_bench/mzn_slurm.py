@@ -10,6 +10,9 @@ from dataclasses import asdict, dataclass, field, fields
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional
+from ruamel.yaml import YAML
+
+yaml=YAML(typ="unsafe", pure=True)
 
 if os.environ.get("MZN_DEBUG", "OFF") == "ON":
     import logging
@@ -17,7 +20,6 @@ if os.environ.get("MZN_DEBUG", "OFF") == "ON":
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 import minizinc
-import ruamel.yaml
 
 
 @dataclass
@@ -102,7 +104,7 @@ def schedule(
     instances: Path,
     timeout: timedelta,
     configurations: Iterable[Configuration],
-    nodelist: Iterable[str],
+    nodelist: Optional[Iterable[str]] = None,
     output_dir: Path = Path.cwd() / "results",
     job_name: str = "MiniZinc Benchmark",
     cpus_per_task: int = 1,
@@ -133,6 +135,16 @@ def schedule(
         slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
         env["MZN_DEBUG"] = "ON"
 
+    n_tasks = num_instances*len(configurations)
+    instances = str(instances.resolve())
+    output_dir = str(output_dir.resolve())
+
+    if nodelist is None:
+        os.environ.update(env)
+        for i in range(n_tasks):  # simulate environment like SLURM
+            os.environ["SLURM_ARRAY_TASK_ID"] = str(i+1)
+            main(Path(instances), Path(output_dir))
+        return
     cmd = [
         "sbatch",
         f"--output={slurm_output}",
@@ -140,7 +152,7 @@ def schedule(
         f"--cpus-per-task={cpus_per_task}",
         f"--mem={memory}",
         f"--nodelist={','.join(nodelist)}",
-        f"--array=1-{num_instances*len(configurations)}",
+        f"--array=1-{n_tasks}",
         f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
     ]
     if nice is not None:
@@ -150,8 +162,8 @@ def schedule(
     cmd.extend(
         [
             str(this_script.resolve()),
-            str(instances.resolve()),
-            str(output_dir.resolve()),
+            str(instances),
+            str(output_dir),
         ]
     )
 
@@ -199,12 +211,12 @@ async def run_instance(
                     solution["solution"] = asdict(result.solution)
                     solution["solution"].pop("_output_item", None)
                     solution["solution"].pop("_checker", None)
-                file.write(ruamel.yaml.dump([solution]))
+                yaml.dump([solution], file)
 
                 statistics.update(result.statistics)
                 statistics["status"] = str(result.status)
                 if result.solution is not None and not is_satisfaction:
-                    statistics["objective"] = result.solution.objective
+                    statistics["objective"] = result.solution["objective"]
 
         total_time = time.perf_counter() - start
         statistics["time"] = total_time
@@ -215,19 +227,21 @@ async def run_instance(
     for key, val in statistics.items():
         if isinstance(val, timedelta):
             statistics[key] = val.total_seconds()
-    ruamel.yaml.dump(
+    yaml.dump(
         statistics,
         stats_file.open(mode="w"),
-        default_flow_style=False,
+        # default_flow_style=False,  # TODO does not seem to be supported anymore?
     )
 
 
 if __name__ == "__main__":
+    instances = Path(sys.argv[1])
+    output_dir = Path(sys.argv.get(2, Path.home()))
+    main(instances, output_dir)
+
+def main(instances, output_dir):
     filename = "minizinc_slurm"
-    output_dir = Path.home()
     try:
-        instances = Path(sys.argv[1])
-        output_dir = Path(sys.argv[2])
         task_id = int(os.environ["SLURM_ARRAY_TASK_ID"]) - 1
         timeout = timedelta(milliseconds=int(os.environ["MZN_SLURM_TIMEOUT"]))
         configurations = json.loads(os.environ["MZN_SLURM_CONFIGS"], cls=_JSONDec)
@@ -291,5 +305,7 @@ if __name__ == "__main__":
             )
         )
     except Exception:
+        if "SLURM_JOB_NODELIST" not in os.environ:
+            raise
         file = output_dir / f"{filename}_err.txt"
         file.write_text(f"ERROR: {traceback.format_exc()}")
