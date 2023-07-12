@@ -309,6 +309,6 @@ def main(instances, output_dir):
 
 if __name__ == "__main__":
     instances = Path(sys.argv[1])
-    output_dir = Path(sys.argv[2]) if len(sys.argv) == 2 else Path.home()
+    output_dir = Path(sys.argv[2]) if len(sys.argv) == 3 else Path.home()
     main(instances, output_dir)
 
