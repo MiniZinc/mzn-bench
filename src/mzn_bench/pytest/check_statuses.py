@@ -2,10 +2,8 @@ from typing import Any, Dict
 
 import pytest
 from minizinc import Method, Status
-from ruamel.yaml import YAML
 from pathlib import Path
-
-yaml = YAML(typ="unsafe")
+from mzn_bench import yaml
 
 
 class StatsFile(pytest.File):

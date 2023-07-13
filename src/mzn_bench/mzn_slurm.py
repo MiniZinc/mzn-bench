@@ -13,7 +13,10 @@ from typing import Any, Dict, Iterable, NoReturn, Optional
 import minizinc
 from ruamel.yaml import YAML
 
-yaml=YAML(typ="unsafe", pure=True)
+yaml=YAML(typ='safe')
+yaml.register_class(minizinc.types.ConstrEnum)
+yaml.register_class(minizinc.types.AnonEnum)
+yaml.default_flow_style = False
 
 if os.environ.get("MZN_DEBUG", "OFF") == "ON":
     import logging
@@ -208,7 +211,11 @@ async def run_instance(
                 solution = stat_base.copy()
                 solution["status"] = str(result.status)
                 if "time" in result.statistics:
-                    solution["time"] = result.statistics.pop("time")
+                    statistics_time = result.statistics.pop("time")
+                    if type(statistics_time) is timedelta:
+                        solution["time"] = statistics_time.total_seconds() # convert timedelta to seconds (float), since we cannot register and serialize it to YAML
+                    else:
+                        raise TypeError(f"Time statistic was not `datetime.timedelta` type, but was {type(statistics_time)}. Perhaps you are using an older version of minizinc-python")
                 if result.solution is not None:
                     solution["solution"] = result.solution
                     solution["solution"].pop("_output_item", None)
@@ -219,21 +226,19 @@ async def run_instance(
                 statistics["status"] = str(result.status)
                 if result.solution is not None and not is_satisfaction:
                     statistics["objective"] = result.solution["objective"]
-
-        total_time = time.perf_counter() - start
-        statistics["time"] = total_time
     except minizinc.MiniZincError as err:
         statistics["status"] = str(minizinc.result.Status.ERROR)
         statistics["error"] = str(err)
 
+    total_time = time.perf_counter() - start
+    statistics["time"] = time.perf_counter() - start
+
     for key, val in statistics.items():
         if isinstance(val, timedelta):
             statistics[key] = val.total_seconds()
-    yaml.dump(
-        statistics,
-        stats_file.open(mode="w"),
-        # default_flow_style=False,  # TODO does not seem to be supported anymore?
-    )
+
+    with open(stats_file, "w") as file:
+        yaml.dump(statistics, file)
 
 
 def main(instances, output_dir):

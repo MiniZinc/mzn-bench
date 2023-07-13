@@ -2,8 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
 import minizinc
-from ruamel.yaml import YAML
-yaml=YAML(typ='unsafe', pure=True)
+from mzn_bench import yaml
 
 STANDARD_KEYS = [
     "configuration",
