@@ -7,7 +7,6 @@ import minizinc
 
 from mzn_bench import Configuration, schedule, collect_objectives_, collect_statistics_, check_solutions_, check_statuses_
 
-import sys
 def test_run():
    output_dir="tests/results"
 
@@ -26,7 +25,7 @@ def test_run():
    collect_statistics_([output_dir], f"{output_dir}/stats.csv")
 
    with pytest.raises(SystemExit) as error:
-       check_solutions_(0, ".", output_dir, ["-s"])
+       check_solutions_(0, "./tests", output_dir, ["-s"])
        assert error.code == pytest.ExitCode.OK
 
    with pytest.raises(SystemExit) as error:
