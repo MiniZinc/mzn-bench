@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable, NoReturn, Optional
 import minizinc
 from ruamel.yaml import YAML
 
-yaml=YAML(typ='safe')
+yaml = YAML(typ="safe")
 yaml.register_class(minizinc.types.ConstrEnum)
 yaml.register_class(minizinc.types.AnonEnum)
 yaml.default_flow_style = False
@@ -22,7 +22,6 @@ if os.environ.get("MZN_DEBUG", "OFF") == "ON":
     import logging
 
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-
 
 
 @dataclass
@@ -138,14 +137,14 @@ def schedule(
         slurm_output = f"{output_dir.resolve()}/minizinc_slurm-%A_%a.out"
         env["MZN_DEBUG"] = "ON"
 
-    n_tasks = num_instances*len(configurations)
+    n_tasks = num_instances * len(configurations)
     instances = str(instances.resolve())
     output_dir = str(output_dir.resolve())
 
     if nodelist is None:
         os.environ.update(env)
         for i in range(n_tasks):  # simulate environment like SLURM
-            os.environ["SLURM_ARRAY_TASK_ID"] = str(i+1)
+            os.environ["SLURM_ARRAY_TASK_ID"] = str(i + 1)
             main(Path(instances), Path(output_dir))
         return
     cmd = [
@@ -187,7 +186,7 @@ async def run_instance(
         if config.minizinc is not None:
             assert config.minizinc.exists()
             driver = minizinc.Driver(config.minizinc)
-        model=minizinc.Model(model)
+        model = minizinc.Model(model)
         model.output_type = dict
         instance = minizinc.Instance(config.solver, model, driver)
         for path in data:
@@ -213,9 +212,15 @@ async def run_instance(
                 if "time" in result.statistics:
                     statistics_time = result.statistics.pop("time")
                     if type(statistics_time) is timedelta:
-                        solution["time"] = statistics_time.total_seconds() # convert timedelta to seconds (float), since we cannot register and serialize it to YAML
+                        solution[
+                            "time"
+                        ] = (
+                            statistics_time.total_seconds()
+                        )  # convert timedelta to seconds (float), since we cannot register and serialize it to YAML
                     else:
-                        raise TypeError(f"Time statistic was not `datetime.timedelta` type, but was {type(statistics_time)}. Perhaps you are using an older version of minizinc-python")
+                        raise TypeError(
+                            f"Time statistic was not `datetime.timedelta` type, but was {type(statistics_time)}. Perhaps you are using an older version of minizinc-python"
+                        )
                 if result.solution is not None:
                     solution["solution"] = result.solution
                     solution["solution"].pop("_output_item", None)
@@ -312,8 +317,8 @@ def main(instances, output_dir):
         file = output_dir / f"{filename}_err.txt"
         file.write_text(f"ERROR: {traceback.format_exc()}")
 
+
 if __name__ == "__main__":
     instances = Path(sys.argv[1])
     output_dir = Path(sys.argv[2]) if len(sys.argv) == 3 else Path.home()
     main(instances, output_dir)
-

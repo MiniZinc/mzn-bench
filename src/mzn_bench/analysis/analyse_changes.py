@@ -198,13 +198,19 @@ class PerformanceChanges:
         assert method == "json"
         return json.dumps(as_dict)
 
+
 def read_row(row: dict):
     return (
         row["status"],
         float(math.nan if row["time"] == "" else row["time"]),
-        float(row["objective"] if "objective" in row and row["objective"] != "" else math.nan),
+        float(
+            row["objective"]
+            if "objective" in row and row["objective"] != ""
+            else math.nan
+        ),
         row["method"],
     )
+
 
 def compare_configurations(
     statistics: Path, from_conf: str, to_conf: str, time_delta: float, obj_delta: float
