@@ -15,15 +15,17 @@ packages = [{ include = "mzn_bench", from = "src" }]
 mzn-bench = 'mzn_bench.cli:main'
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 minizinc = "^0.9"
 ruamel-yaml = "^0.17"
 click = "^8.1"
 tabulate = { version = "^0.9", optional = true }
 pandas = { version =  "^2.0", optional = true }
+bokeh = { version =  "^3.2", optional = true }
 
 [tool.poetry.extras]
 scripts = ["tabulate", "pandas"]
+plotting = ["bokeh"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
