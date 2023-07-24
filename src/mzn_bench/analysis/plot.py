@@ -7,13 +7,13 @@ from bokeh.models.annotations import Span
 from bokeh.models.ranges import FactorRange
 from bokeh.models.tools import HoverTool
 from bokeh.palettes import Palette, Spectral5
-from bokeh.plotting import Figure, figure, gridplot
+from bokeh.plotting import figure, gridplot
 from bokeh.transform import factor_cmap
 
 
 def plot_all_instances(
     sols: pd.DataFrame, stats: pd.DataFrame, palette: Palette = Spectral5
-) -> Figure:
+) -> figure:
     """Plot all instances in a grid
 
     Args:
@@ -22,7 +22,7 @@ def plot_all_instances(
         palette (Palette, optional): The colour palette to use. Defaults to Spectral5.
 
     Returns:
-        Figure: The plotting figure
+        figure: The plotting figure
     """
     return gridplot(
         [
@@ -48,7 +48,7 @@ def plot_instance(
     model: str,
     data: str = "",
     palette: Palette = Spectral5,
-) -> Figure:
+) -> figure:
     """Plots objective data for an optimisation problem instance, and run time
        data for a satisfaction problem instance.
 
@@ -60,7 +60,7 @@ def plot_instance(
         palette (Palette, optional): The colour palette to use. Defaults to Spectral5.
 
     Returns:
-        Figure: The plotting figure
+        figure.Figure: The plotting figure
     """
     df_stats = stats[
         (stats.model.eq(model) | stats.problem.eq(model)) & stats.data_file.eq(data)
@@ -233,7 +233,7 @@ def plot_instance(
         return p
 
 
-def plot_total_time(stats: pd.DataFrame, palette: Palette = Spectral5) -> Figure:
+def plot_total_time(stats: pd.DataFrame, palette: Palette = Spectral5) -> figure:
     """Plots a summary bar graph giving total run time for each configuration
         and run.
 
@@ -242,7 +242,7 @@ def plot_total_time(stats: pd.DataFrame, palette: Palette = Spectral5) -> Figure
         palette (Palette, optional): Colour palette. Defaults to Spectral5.
 
     Returns:
-        figure.Figure: The plotting figure
+        figure: The plotting figure
     """
 
     if stats.configuration.nunique() == 1:
