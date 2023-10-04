@@ -46,7 +46,7 @@ def test_run():
     collect_statistics_([OUTPUT_DIR], STATS)
 
     with pytest.raises(SystemExit) as error:
-        check_solutions_(0, "./tests", OUTPUT_DIR, ["-s"])
+        check_solutions_(0, "./tests", OUTPUT_DIR, ["-s", "--timeout", "-1"])
     assert error.value.code == pytest.ExitCode.OK, f"Check solution did not exit successfully: {error=}"
 
     with pytest.raises(SystemExit) as error:

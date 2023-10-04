@@ -1,6 +1,7 @@
 import random
 from pathlib import Path
 from typing import Any, Dict, Optional
+from datetime import timedelta
 
 import pytest
 from _pytest.config import Config
@@ -14,14 +15,16 @@ class SolFile(pytest.File):
     checker: Solver
     num_check: int
     base_dir: Path
+    timeout: timedelta
 
     def __init__(
-        self, checker: Solver, num_check: int, base_dir: Path, *args, **kwargs
+            self, checker: Solver, num_check: int, base_dir: Path, timeout: Optional[timedelta], *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.checker = checker
         self.num_check = num_check
         self.base_dir = base_dir
+        self.timeout = timeout
 
     def collect(self):
         with self.fspath.open() as fp:
@@ -55,6 +58,7 @@ class SolFile(pytest.File):
                     result=result,
                     checker=self.checker,
                     base_dir=self.base_dir,
+                    timeout=self.timeout
                 )
 
 
@@ -63,14 +67,16 @@ class SolItem(pytest.Item):
     checker: Solver
     key: str
     base_dir: Path
+    timeout: timedelta
 
     def __init__(
-        self, result: Dict[str, any], checker: Solver, base_dir: Path, *args, **kwargs
+            self, result: Dict[str, any], checker: Solver, base_dir: Path, timeout: Optional[timedelta], *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.result = result
         self.checker = checker
         self.base_dir = base_dir
+        self.timeout = timeout
         self.key = "{}_{}_{}".format(
             self.result["problem"], self.result["model"], self.result["data_file"]
         )
@@ -87,7 +93,7 @@ class SolItem(pytest.Item):
             model.add_file(self.base_dir / self.result["data_file"])
         status = Status[self.result["status"]]
         assert check_solution(
-            model, solution, status, self.checker
+            model, solution, status, self.checker, timeout=self.timeout
         ), "Incorrect solution"
 
         # Record that the problem is satisfiable for use in check_statuses
@@ -120,6 +126,11 @@ class SolutionChecker:
     def base_dir(self) -> str:
         return self.config.getoption("--base-dir")
 
+    @property
+    def timeout(self) -> int:
+        return self.config.getoption("--timeout")
+
+
     def pytest_addoption(self, parser):
         parser.addoption(
             "--check",
@@ -133,6 +144,12 @@ class SolutionChecker:
             default=".",
             help="Base directory for model/data file resolution.",
         )
+        parser.addoption(
+            "--timeout",
+            type=int,
+            default="30",
+            help="Timeout (in seconds) for checker solver. Set to -1 for no timeout.",
+        )
 
     def pytest_collect_file(self, parent, path):
         if path.basename.endswith("_sol.yml"):
@@ -142,6 +159,7 @@ class SolutionChecker:
                 checker=self.checker,
                 num_check=self.num_check,
                 base_dir=Path(self.base_dir),
+                timeout=None if self.timeout == -1 else timedelta(seconds=self.timeout),
             )
 
     def pytest_runtest_logreport(self, report):
