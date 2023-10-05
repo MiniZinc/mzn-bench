@@ -2,13 +2,13 @@
 from datetime import timedelta
 from pathlib import Path
 import pytest
+from mzn_bench.analysis.collect import read_csv
 
 try:
-    from bokeh.plotting import show
+    from bokeh.plotting import output_file, save
     from mzn_bench.analysis.plot import plot_all_instances
-    from mzn_bench.analysis.collect import read_csv
 except ImportError:
-    show=None
+    output_file=None
 
 import minizinc
 
@@ -29,6 +29,7 @@ def test_run():
     INSTANCES = "./tests/test.csv"
     OBJS = f"{OUTPUT_DIR}/objs.csv"
     STATS = f"{OUTPUT_DIR}/stats.csv"
+    PLOT = f"{OUTPUT_DIR}/plot.html"
 
     schedule(
         instances=Path(INSTANCES),
@@ -45,13 +46,16 @@ def test_run():
     collect_statistics_([OUTPUT_DIR], STATS)
 
     with pytest.raises(SystemExit) as error:
-        check_solutions_(0, "./tests", OUTPUT_DIR, ["-s"])
-        assert error.code == pytest.ExitCode.OK
+        check_solutions_(0, "./tests", OUTPUT_DIR, ["-s", "--timeout", "-1"])
+    assert error.value.code == pytest.ExitCode.OK, f"Check solution did not exit successfully: {error=}"
 
     with pytest.raises(SystemExit) as error:
         check_statuses_(OUTPUT_DIR, ["-s"])
-        assert error.code == pytest.ExitCode.OK
+    assert error.value.code == pytest.ExitCode.OK, f"Check solution did not exit successfully: {error=}"
 
-    if show is not None:
+    # Use `poetry install --all-extras` to test this part
+    if output_file is not None:
         objs, stats = read_csv(OBJS, STATS)
-        plot_all_instances(objs, stats)
+        output_file(filename=PLOT, title="Plot")
+        p=plot_all_instances(objs, stats)
+        save(p)
