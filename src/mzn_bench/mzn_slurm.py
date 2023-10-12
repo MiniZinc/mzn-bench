@@ -181,6 +181,7 @@ async def run_instance(
     problem, model, data, config, timeout, stat_base, sol_file, stats_file
 ):
     statistics = stat_base.copy()
+    start = time.perf_counter()
     try:
         driver = minizinc.default_driver
         if config.minizinc is not None:
@@ -196,7 +197,6 @@ async def run_instance(
         for key, value in config.extra_data.items():
             instance[key] = value
 
-        start = time.perf_counter()
         with sol_file.open(mode="w") as file:
             async for result in instance.solutions(
                 timeout=timeout,
