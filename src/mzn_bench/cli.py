@@ -217,14 +217,11 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
 
 @main.command()
 @click.option(
-    "--per-model",
-    is_flag=True,
-    help="Create a row for every model",
-)
-@click.option(
-    "--per-problem",
-    is_flag=True,
-    help="Create a row for every problem",
+    "--grouping",
+    help="Aggregate results over one or more groupings",
+    type=click.Choice(["configuration", "run", "problem", "model", "data_file"]),
+    default=["configuration"],
+    multiple=True
 )
 @click.option(
     "--avg",
@@ -241,8 +238,7 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
     "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
 )
 def report_status(
-    per_model: bool,
-    per_problem: bool,
+    groupings: Iterable[str],
     statistics: str,
     avg: str,
     output_mode: str,
@@ -255,7 +251,7 @@ def report_status(
         from .analysis.report_status import report_status as report_status_fn
 
         print(
-            report_status_fn(per_model, per_problem, Path(statistics), avg, output_mode)
+            report_status_fn(groupings, Path(statistics), avg, output_mode)
         )
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)

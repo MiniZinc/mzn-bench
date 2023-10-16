@@ -22,6 +22,9 @@ from mzn_bench import (
 )
 
 
+from mzn_bench.analysis.report_status import report_status
+
+
 def test_run():
     OUTPUT_DIR = "tests/results"
 
@@ -55,6 +58,7 @@ def test_run():
 
     # Use `poetry install --all-extras` to test this part
     if output_file is not None:
+        report_status(["configuration", "data_file"], Path(STATS), "time", "plain")
         objs, stats = read_csv(OBJS, STATS)
         output_file(filename=PLOT, title="Plot")
         p=plot_all_instances(objs, stats)

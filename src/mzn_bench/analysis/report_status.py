@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 
+from typing import Iterable, Optional
 from tabulate import tabulate
 from minizinc.result import Status
 
@@ -13,25 +14,14 @@ def status_from_str(s: str) -> Status:
 
 
 def report_status(
-    per_model: bool, per_problem: bool, statistics: Path, avg: str, tablefmt: str
+    keys: Iterable[str], statistics: Path, avg: str, tablefmt: str
 ):
-    keys = ["configuration"]
-
-    if per_model:
-        keys.append("model")
-    if per_problem:
-        keys.append("problem")
-
     seen_status = set()
     table = {}
     with statistics.open() as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            key = [row["configuration"]]
-            if per_model:
-                key.append(row["model"])
-            if per_problem:
-                key.append(row["problem"])
+            key = [ row[key] for key in keys ]
 
             status = status_from_str(row["status"])
             seen_status.add(status)
