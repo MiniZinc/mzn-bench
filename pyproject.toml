@@ -16,7 +16,7 @@ mzn-bench = 'mzn_bench.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.8"
-minizinc = "^0.9"
+minizinc = { git = "https://github.com/MiniZinc/minizinc-python" }
 ruamel-yaml = "^0.17"
 click = "^8.1"
 tabulate = { version = "^0.9", optional = true }
