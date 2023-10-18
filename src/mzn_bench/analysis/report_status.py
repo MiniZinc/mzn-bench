@@ -1,7 +1,7 @@
 import csv
 from pathlib import Path
 
-from typing import Iterable, Optional
+from typing import Iterable
 from tabulate import tabulate
 from minizinc.result import Status
 
