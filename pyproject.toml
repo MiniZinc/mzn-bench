@@ -16,20 +16,21 @@ mzn-bench = 'mzn_bench.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.8"
-minizinc = "^0.9"
+minizinc = { git = "https://github.com/MiniZinc/minizinc-python" }
 ruamel-yaml = "^0.17"
 click = "^8.1"
 tabulate = { version = "^0.9", optional = true }
 pandas = { version =  "^2.0", optional = true }
 bokeh = { version =  "^3", optional = true }
+pytest = { version = "^7.4.0", optional = true }
 
 [tool.poetry.extras]
-scripts = ["tabulate", "pandas"]
+scripts = ["tabulate", "pandas", "pytest"]
 plotting = ["bokeh"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
 black = "^23.7.0"
+pytest = "^7.4.0"
 
 [tool.pytest.ini_options]
 pythonpath = [

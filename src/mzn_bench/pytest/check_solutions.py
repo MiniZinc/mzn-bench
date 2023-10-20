@@ -93,7 +93,7 @@ class SolItem(pytest.Item):
             model.add_file(self.base_dir / self.result["data_file"])
         status = Status[self.result["status"]]
         assert check_solution(
-            model, solution, status, self.checker, timeout=self.timeout
+            model, solution, status, self.checker, time_limit=self.timeout
         ), "Incorrect solution"
 
         # Record that the problem is satisfiable for use in check_statuses
