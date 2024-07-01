@@ -61,7 +61,7 @@ class Configuration:
                 }
             )
         elif identifier.endswith(".msc"):
-            obj["solver"] = minizinc.Solver.load(identifier)
+            obj["solver"] = minizinc.Solver.load(Path(identifier))
         else:
             # TODO: version tags should be handled correctly by MiniZinc Python
             version = None
