@@ -90,6 +90,6 @@ def report_status(
 
     return tabulate(
         output,
-        headers=(keys + [s for s in status_order if s in seen_status]),
+        headers=(list(keys) + [s for s in status_order if s in seen_status]),
         tablefmt=tablefmt,
     )

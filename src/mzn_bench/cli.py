@@ -217,7 +217,7 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
 
 @main.command()
 @click.option(
-    "--grouping",
+    "--groupings",
     help="Aggregate results over one or more groupings",
     type=click.Choice(["configuration", "run", "problem", "model", "data_file"]),
     default=["configuration"],
