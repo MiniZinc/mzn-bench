@@ -107,6 +107,7 @@ def schedule(
     timeout: timedelta,
     configurations: Iterable[Configuration],
     nodelist: Optional[Iterable[str]] = None,
+    partition: Optional[Iterable[str]] = None,
     output_dir: Path = Path.cwd() / "results",
     job_name: str = "MiniZinc Benchmark",
     cpus_per_task: int = 1,
@@ -141,7 +142,7 @@ def schedule(
     instances = str(instances.resolve())
     output_dir = str(output_dir.resolve())
 
-    if nodelist is None:
+    if nodelist is None and partition is None:
         os.environ.update(env)
         for i in range(n_tasks):  # simulate environment like SLURM
             os.environ["SLURM_ARRAY_TASK_ID"] = str(i + 1)
@@ -153,10 +154,17 @@ def schedule(
         f'--job-name="{job_name}"',
         f"--cpus-per-task={cpus_per_task}",
         f"--mem={memory}",
-        f"--nodelist={','.join(nodelist)}",
         f"--array=1-{n_tasks}",
         f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
     ]
+    if nodelist is not None:
+        cmd += [
+            f"--nodelist={','.join(nodelist)}",
+        ]
+    if partition is not None: 
+        cmd += [
+            f"--partition={','.join(partition)}",
+        ]
     if nice is not None:
         cmd.append(f"--nice={nice}")
     if wait:
