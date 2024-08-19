@@ -142,23 +142,30 @@ def schedule(
     instances = str(instances.resolve())
     output_dir = str(output_dir.resolve())
 
-    if nodelist is None:
+    if nodelist is None and partition is None:
         os.environ.update(env)
         for i in range(n_tasks):  # simulate environment like SLURM
             os.environ["SLURM_ARRAY_TASK_ID"] = str(i + 1)
             main(Path(instances), Path(output_dir))
         return
+
     cmd = [
         "sbatch",
         f"--output={slurm_output}",
         f'--job-name="{job_name}"',
         f"--cpus-per-task={cpus_per_task}",
         f"--mem={memory}",
-        f"--nodelist={','.join(nodelist)}",
-        f"--partition={partition}",
         f"--array=1-{n_tasks}",
         f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
     ]
+    if nodelist is not None:
+        cmd += [
+            f"--nodelist={','.join(nodelist)}",
+        ]
+    if partition is not None: 
+        cmd += [
+            f"--partition={','.join(partition)}",
+        ]
     if nice is not None:
         cmd.append(f"--nice={nice}")
     if wait:
