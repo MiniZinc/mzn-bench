@@ -107,6 +107,7 @@ def schedule(
     timeout: timedelta,
     configurations: Iterable[Configuration],
     nodelist: Optional[Iterable[str]] = None,
+    partition: Optional[Iterable[str]] = None,
     output_dir: Path = Path.cwd() / "results",
     job_name: str = "MiniZinc Benchmark",
     cpus_per_task: int = 1,
@@ -154,6 +155,7 @@ def schedule(
         f"--cpus-per-task={cpus_per_task}",
         f"--mem={memory}",
         f"--nodelist={','.join(nodelist)}",
+        f"--partition={partition}",
         f"--array=1-{n_tasks}",
         f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
     ]
