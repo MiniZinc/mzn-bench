@@ -13,15 +13,13 @@ def status_from_str(s: str) -> Status:
             return v
 
 
-def report_status(
-    keys: Iterable[str], statistics: Path, avg: str, tablefmt: str
-):
+def report_status(keys: Iterable[str], statistics: Path, avg: str, tablefmt: str):
     seen_status = set()
     table = {}
     with statistics.open() as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            key = [ row[key] for key in keys ]
+            key = [row[key] for key in keys]
 
             status = status_from_str(row["status"])
             seen_status.add(status)

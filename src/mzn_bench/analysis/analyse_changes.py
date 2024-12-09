@@ -47,7 +47,8 @@ class PerformanceChanges:
     missing_instances: List[Tuple[str, str]] = field(default_factory=list)
 
     def __str__(self):
-        obj_sort_key = lambda it: (1 if it[4] else -1) * (it[3] - it[2]) / it[2]
+        def obj_sort_key(it):
+            return (1 if it[4] else -1) * (it[3] - it[2]) / it[2]
 
         n_status_changes = sum([len(li) for key, li in self.status_changes.items()])
         n_pos_status_changes = 0
@@ -84,7 +85,7 @@ class PerformanceChanges:
                 "Negative Status Changes:\n------------------------\n" + stat_neg_str
             )
 
-        output = f"Summary:\n" f"========\n"
+        output = "Summary:\n" "========\n"
         if len(self.missing_instances) > 0:
             output += f"- Missing instances: {len(self.missing_instances)}\n"
         if len(self.obj_conflicts) > 0:
