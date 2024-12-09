@@ -225,6 +225,10 @@ async def run_instance(
                     solution["solution"].pop("_checker", None)
                 yaml.dump([solution], file)
 
+                if "objective" in result.statistics:
+                    result.statistics["solver_objective"] = result.statistics.pop(
+                        "objective"
+                    )
                 statistics.update(result.statistics)
                 statistics["status"] = str(result.status)
                 if result.solution is not None and not is_satisfaction:
