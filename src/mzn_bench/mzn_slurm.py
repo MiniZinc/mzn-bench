@@ -160,7 +160,7 @@ def schedule(
     if nice is not None:
         cmd.append(f"--nice={nice}")
     if wait:
-        cmd.append(f"--wait")
+        cmd.append("--wait")
     cmd.extend(
         [
             str(this_script.resolve()),
@@ -212,9 +212,7 @@ async def run_instance(
                 if "time" in result.statistics:
                     statistics_time = result.statistics.pop("time")
                     if type(statistics_time) is timedelta:
-                        solution[
-                            "time"
-                        ] = (
+                        solution["time"] = (
                             statistics_time.total_seconds()
                         )  # convert timedelta to seconds (float), since we cannot register and serialize it to YAML
                     else:
@@ -235,7 +233,6 @@ async def run_instance(
         statistics["status"] = str(minizinc.result.Status.ERROR)
         statistics["error"] = str(err)
 
-    total_time = time.perf_counter() - start
     statistics["time"] = time.perf_counter() - start
 
     for key, val in statistics.items():

@@ -7,7 +7,6 @@ import pytest
 from _pytest.config import Config
 from minizinc import Model, Solver, Status
 from minizinc.helpers import check_solution
-import minizinc
 from mzn_bench import yaml
 
 
@@ -18,7 +17,13 @@ class SolFile(pytest.File):
     timeout: timedelta
 
     def __init__(
-            self, checker: Solver, num_check: int, base_dir: Path, timeout: Optional[timedelta], *args, **kwargs
+        self,
+        checker: Solver,
+        num_check: int,
+        base_dir: Path,
+        timeout: Optional[timedelta],
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.checker = checker
@@ -58,7 +63,7 @@ class SolFile(pytest.File):
                     result=result,
                     checker=self.checker,
                     base_dir=self.base_dir,
-                    timeout=self.timeout
+                    timeout=self.timeout,
                 )
 
 
@@ -70,7 +75,13 @@ class SolItem(pytest.Item):
     timeout: timedelta
 
     def __init__(
-            self, result: Dict[str, any], checker: Solver, base_dir: Path, timeout: Optional[timedelta], *args, **kwargs
+        self,
+        result: Dict[str, any],
+        checker: Solver,
+        base_dir: Path,
+        timeout: Optional[timedelta],
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.result = result
@@ -129,7 +140,6 @@ class SolutionChecker:
     @property
     def timeout(self) -> int:
         return self.config.getoption("--timeout")
-
 
     def pytest_addoption(self, parser):
         parser.addoption(

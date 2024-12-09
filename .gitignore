@@ -84,7 +84,7 @@ profile_default/
 ipython_config.py
 
 # pyenv
-.python-version
+#.python-version
 
 # celery beat schedule file
 celerybeat-schedule
@@ -118,3 +118,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ruff
+.ruff_cache/

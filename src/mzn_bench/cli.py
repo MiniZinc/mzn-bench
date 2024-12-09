@@ -221,7 +221,7 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
     help="Aggregate results over one or more groupings",
     type=click.Choice(["configuration", "run", "problem", "model", "data_file"]),
     default=["configuration"],
-    multiple=True
+    multiple=True,
 )
 @click.option(
     "--avg",
@@ -250,9 +250,7 @@ def report_status(
     try:
         from .analysis.report_status import report_status as report_status_fn
 
-        print(
-            report_status_fn(groupings, Path(statistics), avg, output_mode)
-        )
+        print(report_status_fn(groupings, Path(statistics), avg, output_mode))
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)
         exit(1)

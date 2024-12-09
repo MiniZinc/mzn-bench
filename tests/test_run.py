@@ -8,7 +8,7 @@ try:
     from bokeh.plotting import output_file, save
     from mzn_bench.analysis.plot import plot_all_instances
 except ImportError:
-    output_file=None
+    output_file = None
 
 import minizinc
 
@@ -50,16 +50,20 @@ def test_run():
 
     with pytest.raises(SystemExit) as error:
         check_solutions_(0, "./tests", OUTPUT_DIR, ["-s", "--timeout", "-1"])
-    assert error.value.code == pytest.ExitCode.OK, f"Check solution did not exit successfully: {error=}"
+    assert (
+        error.value.code == pytest.ExitCode.OK
+    ), f"Check solution did not exit successfully: {error=}"
 
     with pytest.raises(SystemExit) as error:
         check_statuses_(OUTPUT_DIR, ["-s"])
-    assert error.value.code == pytest.ExitCode.OK, f"Check solution did not exit successfully: {error=}"
+    assert (
+        error.value.code == pytest.ExitCode.OK
+    ), f"Check solution did not exit successfully: {error=}"
 
     # Use `poetry install --all-extras` to test this part
     if output_file is not None:
         report_status(["configuration", "data_file"], Path(STATS), "time", "plain")
         objs, stats = read_csv(OBJS, STATS)
         output_file(filename=PLOT, title="Plot")
-        p=plot_all_instances(objs, stats)
+        p = plot_all_instances(objs, stats)
         save(p)
