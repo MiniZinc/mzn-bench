@@ -299,8 +299,10 @@ def compare_configurations(
         from .analysis.analyse_changes import compare_configurations as fn
 
         result = fn(Path(statistics), from_conf, to_conf, time_delta, obj_delta)
-        if output_mode != "human":
+        if output_mode == "json":
             result = result.serialise(output_mode)
+        if output_mode == "csv":
+            result = result.to_csv(output_mode)
 
         print(result)
     except ImportError:

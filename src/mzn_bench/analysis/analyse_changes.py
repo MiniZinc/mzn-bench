@@ -6,6 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple, Dict, List
+import pandas as pd 
 
 # The difference in objectives for them to be considered the same
 SAME_DELTA = 1e-6
@@ -26,6 +27,9 @@ CONFLICT_STATUS_CHANGES = [
     ("SATISFIED", "UNSATISFIABLE"),
     ("UNSATISFIABLE", "OPTIMAL_SOLUTION"),
     ("OPTIMAL_SOLUTION", "UNSATISFIABLE"),
+    ("UNSATISFIABLE", "ERROR"),
+    ("SATISFIED", "ERROR"),
+    ("OPTIMAL_SOLUTION", "ERROR"),
 ]
 
 
@@ -199,6 +203,82 @@ class PerformanceChanges:
         assert method == "json"
         return json.dumps(as_dict)
 
+    def to_csv(self, method: str) -> str:
+        df = pd.DataFrame(columns=["model","data","status_conflict","obj_conflict","missing","maximise","status_before","time_before","status_after","time_after","obj_before","obj_after"])
+
+        # output instances with status changes 
+        for (from_stat, to_stat), li in self.status_changes.items():
+            for model, data in li:
+                new_row = {
+                    "model": model, 
+                    "data": data, 
+                    "status_before": from_stat, 
+                    "status_after": to_stat, 
+                    "obj_conflict": False, 
+                    "status_conflict": False, 
+                    "missing": False
+                }
+                if (from_stat, to_stat) in CONFLICT_STATUS_CHANGES:
+                    new_row["status_conflict"] = True
+                df.loc[len(df)] = new_row
+
+        # output instances with objective conflicts 
+        for (model, data, from_obj, to_obj, is_max) in self.obj_conflicts:
+            new_row = {
+                "model": model, 
+                "data": data, 
+                "obj_before": from_obj, 
+                "obj_after": to_obj, 
+                "status_before": "OPTIMAL_SOLUTION", 
+                "status_after": "OPTIMAL_SOLUTION", 
+                "maximise": is_max,
+                "obj_conflict": True, 
+                "status_conflict": False, 
+                "missing": False
+            }
+            df.loc[len(df)] = new_row
+
+        # output instances with time changes
+        for (model, data, from_time, to_time) in self.time_changes:
+            new_row = {
+                "model": model, 
+                "data": data, 
+                "time_before": from_time, 
+                "time_after": to_time, 
+                "obj_conflict": False, 
+                "status_conflict": False, 
+                "missing": False
+            }
+            df.loc[len(df)] = new_row
+
+        # output instances with objective changes 
+        for (model, data, from_obj, to_obj, is_max) in self.obj_changes:
+            new_row = {
+                "model": model,
+                "data": data,
+                "obj_before": from_obj,
+                "obj_after": to_obj,
+                "maximise": is_max,
+                "obj_conflict": False, 
+                "status_conflict": False, 
+                "missing": False
+            }
+            df.loc[len(df)] = new_row
+
+        # output missing instances 
+        for (model, data) in self.missing_instances:
+            new_row = {
+                "model": model, 
+                "data": data, 
+                "obj_conflict": False, 
+                "status_conflict": False, 
+                "missing": True
+            }
+            df.loc[len(df)] = new_row
+
+        assert method == "csv"
+        return df.to_csv(None, index=False) 
+
 
 def read_row(row: dict):
     return (
@@ -245,7 +325,7 @@ def compare_configurations(
                 from_val[0] == "OPTIMAL_SOLUTION"
                 and abs(from_val[2] - to_val[2]) > SAME_DELTA
             ):
-                changes.obj_conflicts.append((key[0], key[1], from_val[2], to_val[2]))
+                changes.obj_conflicts.append((key[0], key[1], from_val[2], to_val[2], from_val[3] == "maximize"))
             elif abs(time_change) > time_delta:
                 changes.time_changes.append((key[0], key[1], from_val[1], to_val[1]))
         elif from_val[0] == "SATISFIED" and from_val[3] != "satisfy":
