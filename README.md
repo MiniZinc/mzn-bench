@@ -107,6 +107,8 @@ A `Configuration` object has the following attributes:
   MiniZinc Python's `__setitem__` method on the generated instances. If data
   needs the value of an identifier internal to MiniZinc, then please use an
   `DZNExpression` object (e.g., `{"preferred_encoding": DZNExpression("UNARY")}`).
+- `extra_model_files: List[Path] = field(default_factory=list)` - Extra model files to be
+  added when using a specific Configuration.
 
 ## Schedule SLURM jobs
 
