@@ -9,7 +9,7 @@ import traceback
 from dataclasses import asdict, dataclass, field, fields
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Iterable, NoReturn, Optional
+from typing import Any, Dict, Iterable, List, NoReturn, Optional
 import minizinc
 from ruamel.yaml import YAML
 
@@ -35,6 +35,7 @@ class Configuration:
     optimisation_level: Optional[int] = None
     other_flags: Dict[str, Any] = field(default_factory=dict)
     extra_data: Dict[str, Any] = field(default_factory=dict)
+    extra_model_files: List[Path] = field(default_factory=list)
 
     def to_dict(self):
         obj = asdict(self)
@@ -161,7 +162,7 @@ def schedule(
         cmd += [
             f"--nodelist={','.join(nodelist)}",
         ]
-    if partition is not None: 
+    if partition is not None:
         cmd += [
             f"--partition={','.join(partition)}",
         ]
@@ -186,7 +187,7 @@ def schedule(
 
 
 async def run_instance(
-    problem, model, data, config, timeout, stat_base, sol_file, stats_file
+    problem, model_files, data, config, timeout, stat_base, sol_file, stats_file
 ):
     statistics = stat_base.copy()
     start = time.perf_counter()
@@ -195,7 +196,8 @@ async def run_instance(
         if config.minizinc is not None:
             assert config.minizinc.exists()
             driver = minizinc.Driver(config.minizinc)
-        model = minizinc.Model(model)
+        assert len(model_files) > 0
+        model = minizinc.Model(model_files + config.extra_model_files)
         model.output_type = dict
         instance = minizinc.Instance(config.solver, model, driver)
         for path in data:
@@ -287,9 +289,13 @@ def main(instances, output_dir):
         # Process instance
         problem = selected_instance[0]
 
-        model = Path(selected_instance[1])
-        if not model.is_absolute():
-            model = instances.parent / model
+        model_files = []
+        for file in selected_instance[1].split(":"):
+            if file != "":
+                path = Path(file)
+                if not path.is_absolute():
+                    path = instances.parent / path
+                model_files.append(path)
 
         data = []
         for file in selected_instance[2].split(":"):
@@ -311,7 +317,7 @@ def main(instances, output_dir):
         asyncio.run(
             run_instance(
                 problem,
-                model,
+                model_files,
                 data,
                 config,
                 timeout,
