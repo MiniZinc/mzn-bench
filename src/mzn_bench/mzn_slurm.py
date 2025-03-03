@@ -48,6 +48,8 @@ class Configuration:
             obj["sol_ident"] = ""
         if self.minizinc is not None:
             obj["minizinc"] = str(self.minizinc)
+        if self.extra_model_files is not None:
+            obj["extra_model_files"] = [str(f) for f in self.extra_model_files]
         return obj
 
     @classmethod
@@ -78,6 +80,8 @@ class Configuration:
 
         if obj["minizinc"] is not None:
             obj["minizinc"] = Path(obj["minizinc"])
+        if obj["extra_model_files"] is not None:
+            obj["extra_model_files"] = [Path(f) for f in obj["extra_model_files"]]
         return cls(**obj)
 
 
