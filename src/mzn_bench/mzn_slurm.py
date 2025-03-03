@@ -38,7 +38,8 @@ class Configuration:
     extra_model_files: List[Path] = field(default_factory=list)
 
     def to_dict(self):
-        obj = asdict(self)
+        # Non-recursive version of `asdict`
+        obj = {field.name: getattr(self, field.name) for field in fields(self)}
         if self.solver._identifier is not None:
             obj["solver"] = ""
             obj["sol_ident"] = self.solver._identifier
@@ -96,10 +97,14 @@ class _JSONEnc(minizinc.json.MZNJSONEncoder):
 
 
 class _JSONDec(minizinc.json.MZNJSONDecoder):
-    def object_hook(self, obj):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        kwargs["object_hook"] = self.mzn_object_hook
+
+    def mzn_object_hook(self, obj):
         if len(obj) == 1 and "_mzn_slurm_dzn_expr" in obj:
             return minizinc.model.UnknownExpression(obj["_mzn_slurm_dzn_expr"])
-        return super().object_hook(obj)
+        return super().mzn_object_hook(obj)
 
 
 # Schedule SLURM tasks
