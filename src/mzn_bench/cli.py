@@ -70,9 +70,20 @@ def collect_instances(shared_data: Optional[str], benchmarks_location: str):
 
 
 @main.command()
+@click.option(
+    "--param",
+    "-p",
+    help="Additional solution parameters to add to each row of the CSV file",
+    default=["configuration"],
+    multiple=True,
+)
 @click.argument("dirs", nargs=-1, type=click.Path(exists=True, dir_okay=True))
 @click.argument("out_file", nargs=1, type=click.Path(file_okay=True))
-def collect_objectives(dirs: Iterable[str], out_file: str):
+def collect_objectives(
+    dirs: Iterable[str],
+    out_file: str,
+    param: Iterable[str],
+):
     """Collects objective values and combines them into a single CSV file.
 
     \b
@@ -80,21 +91,26 @@ def collect_objectives(dirs: Iterable[str], out_file: str):
     OUT_FILE is the output CSV file containing objective data
     """
 
-    collect_objectives_(dirs, out_file)
+    collect_objectives_(dirs, out_file, param)
 
 
-def collect_objectives_(dirs: Iterable[str], out_file: str):
+def collect_objectives_(
+    dirs: Iterable[str],
+    out_file: str,
+    additional_params: Iterable[str],
+):
     count = 0
+    additional_params = list(additional_params)
     with Path(out_file).open(mode="w") as file:
         writer = csv.DictWriter(
             file,
-            STANDARD_KEYS + ["run", "objective"],
+            STANDARD_KEYS + ["run", "objective"] + additional_params,
             dialect="unix",
             extrasaction="ignore",
         )
         writer.writeheader()
         last_keys = ("", "", "", "")
-        for objective in collect_objs(dirs):
+        for objective in collect_objs(dirs, additional_params):
             keys = (
                 objective["configuration"],
                 objective["problem"],
