@@ -238,7 +238,7 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
     "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
 )
 def report_status(
-    groupings: Iterable[str],
+    grouping: Iterable[str],
     statistics: str,
     avg: str,
     output_mode: str,
@@ -250,7 +250,7 @@ def report_status(
     try:
         from .analysis.report_status import report_status as report_status_fn
 
-        print(report_status_fn(groupings, Path(statistics), avg, output_mode))
+        print(report_status_fn(grouping, Path(statistics), avg, output_mode))
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)
         exit(1)
