@@ -74,7 +74,7 @@ def collect_instances(shared_data: Optional[str], benchmarks_location: str):
     "--param",
     "-p",
     help="Additional solution parameters to add to each row of the CSV file",
-    default=["configuration"],
+    default=[],
     multiple=True,
 )
 @click.argument("dirs", nargs=-1, type=click.Path(exists=True, dir_okay=True))
@@ -102,9 +102,12 @@ def collect_objectives_(
     count = 0
     additional_params = list(additional_params)
     with Path(out_file).open(mode="w") as file:
+        labels = STANDARD_KEYS.copy()
+        labels.remove("status")  # No need to output SAT every time
+        labels = labels + ["run", "objective"] + additional_params
         writer = csv.DictWriter(
             file,
-            STANDARD_KEYS + ["run", "objective"] + additional_params,
+            labels,
             dialect="unix",
             extrasaction="ignore",
         )
@@ -414,6 +417,67 @@ def compare_configurations(
             result = result.serialise(output_mode)
 
         print(result)
+    except ImportError:
+        click.echo(IMPORT_ERROR, err=True)
+        exit(1)
+
+
+@main.command()
+@click.argument(
+    "objectives", metavar="objs_file", type=click.Path(exists=True, file_okay=True)
+)
+@click.argument(
+    "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
+)
+@click.argument("out_file", type=click.Path(file_okay=True))
+def plot_all_instances(
+    objectives: str,
+    statistics: str,
+    out_file: str,
+):
+    """Plot all instances in a grid
+
+    STATS_FILE is the CSV file containing aggregated statistics data
+    OBJS_FILE is the CSV file containing aggregated solutions data
+    OUT_FILE is the file to write the plot to
+    """
+    try:
+        from .analysis.collect import read_csv
+        from .analysis.plot import plot_all_instances as fn
+        from bokeh.plotting import save
+
+        objs, stats = read_csv(objectives, statistics)
+        figure = fn(objs, stats)
+
+        save(figure, filename=out_file)
+    except ImportError:
+        click.echo(IMPORT_ERROR, err=True)
+        exit(1)
+
+
+@main.command()
+@click.argument(
+    "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
+)
+@click.argument("out_file", type=click.Path(file_okay=True))
+def plot_cactus(
+    statistics: str,
+    out_file: str,
+):
+    """Plots all configurations in a cactus plot of solved instances
+
+    STATS_FILE is the CSV file containing aggregated statistics data
+    OUT_FILE is the file to write the plot to
+    """
+    try:
+        import pandas as pd
+        from .analysis.plot import plot_cactus as fn
+
+        stats = pd.read_csv(statistics)
+        stats.data_file = stats.data_file.fillna("")
+        fig = fn(stats)
+        fig.savefig(out_file)
+
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)
         exit(1)

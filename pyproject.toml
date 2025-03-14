@@ -19,4 +19,4 @@ mzn-bench = 'mzn_bench.cli:main'
 
 [project.optional-dependencies]
 scripts = ["pandas>=2.2.3", "pytest>=8.3.4", "tabulate>=0.9.0"]
-plotting = ["bokeh>=3.6.2"]
+plotting = ["bokeh>=3.6.2", "matplotlib>=3.10.1", "seaborn>=0.13.2"]
