@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import traceback
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import dataclass, field, fields
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional

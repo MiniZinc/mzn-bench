@@ -9,6 +9,57 @@ from bokeh.models.tools import HoverTool
 from bokeh.palettes import Palette, Spectral5
 from bokeh.plotting import figure, gridplot
 from bokeh.transform import factor_cmap
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+def plot_cactus(stats: pd.DataFrame):
+    configurations = stats["configuration"].unique()
+
+    frames = []
+    for conf in configurations:
+        # Filter statistics to find completed instances
+        conf_stats = stats[
+            (stats["configuration"] == conf)
+            & (
+                (stats["status"] == "OPTIMAL_SOLUTION")
+                | ((stats["status"] == "SATISFIED") & (stats["method"] == "satisfy"))
+            )
+        ]
+
+        # Extract solving time and sort in ascending order
+        t = pd.DataFrame({"time": sorted(conf_stats["time"])})
+
+        # Add the position in the column (i.e. 1..n) as the number of instances
+        # solved in up to the time in that row
+        t["n_solved"] = list(range(1, 1 + len(t)))
+
+        # Label with the associated configuration
+        t["configuration"] = conf
+        frames.append(t)
+
+    data = pd.concat(frames, ignore_index=True)
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    sns.lineplot(
+        ax=ax,
+        data=data,
+        y="time",
+        x="n_solved",
+        hue="configuration",
+        style="configuration",
+        markers=True,
+        dashes=False,
+    )
+    ax.set(
+        title="Comparison of solved instances between different configurations",
+        ylabel="CPU time(seconds)",
+        xlabel="# of instances solved",
+    )
+    sns.move_legend(ax, "upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0)
+    fig.tight_layout()
+
+    return fig
 
 
 def plot_all_instances(
