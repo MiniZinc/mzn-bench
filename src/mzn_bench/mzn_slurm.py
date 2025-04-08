@@ -153,7 +153,7 @@ def schedule(
     cmd = [
         "sbatch",
         f"--output={slurm_output}",
-        f'--job-name="{job_name}"',
+        f'--job-name={job_name}',
         f"--cpus-per-task={cpus_per_task}",
         f"--mem-per-cpu={memory}" if mem_per_cpu else f"--mem={memory}",
         f"--array=1-{n_tasks}",
