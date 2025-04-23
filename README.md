@@ -82,10 +82,14 @@ These are all the possible arguments to `schedule`:
 - `job_name: str = "MiniZinc Benchmark"` - The SLURM job name.
 - `cpus_per_task: int = 1` - The number of CPU cores required for each task.
 - `memory: int = 4096` - The maximum memory used for each task.
+- `mem_per_cpu: bool = False` - If True, memory limit will be per CPU (--mem-per-cpu), 
+- else --mem will be used.
 - `debug: bool = False` - Directly capture the output of individual jobs
   and store them in a `./logs/` directory.
 - `wait: bool = False` - The scheduling process will wait for all jobs to
   finish.
+- Additional arguments `key_word=value` are directly passed to slurm unchecked, 
+  after transformation to `--key-word=value`.
 
 A `Configuration` object has the following attributes:
 
