@@ -217,6 +217,64 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
 
 @main.command()
 @click.option(
+    "--grouping",
+    help="Aggregate results over one grouping",
+    type=click.Choice(["all", "problem", "model", "data_file"]),
+    default="all",
+)
+@click.option(
+    "--time-limit",
+    default=1200,
+    type=int,
+    help="Time limit for minizinc score calculation, default is 1200 seconds",
+)
+@click.option(
+    "--output-mode",
+    type=click.Choice(tabulate_options, case_sensitive=False),
+    default="pretty",
+    help="The table format used in the output. All valid tablefmt values are allow, try `latex` for example.",
+)
+@click.option(
+    "--incomplete",
+    is_flag=True,
+    default=False,
+    help="Use incomplete scoring method",
+)
+@click.argument(
+    "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
+)
+def report_mzn_scores(
+    grouping: str,
+    statistics: str,
+    output_mode: str,
+    time_limit: int,
+    incomplete: bool = False,
+):
+    """Aggregate MiniZinc scores into a table
+
+    STATS_FILE is the CSV file containing aggregated statistics data
+    """
+    try:
+        from .analysis.report_mzn_scores import (
+            report_mzn_scores as report_mzn_scores_fn,
+        )
+
+        print(
+            report_mzn_scores_fn(
+                grouping,
+                Path(statistics),
+                output_mode,
+                time_limit,
+                not incomplete,
+            )
+        )
+    except ImportError:
+        click.echo(IMPORT_ERROR, err=True)
+        exit(1)
+
+
+@main.command()
+@click.option(
     "--groupings",
     help="Aggregate results over one or more groupings",
     type=click.Choice(["configuration", "run", "problem", "model", "data_file"]),

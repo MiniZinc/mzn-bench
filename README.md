@@ -171,6 +171,11 @@ The following scripts filter and tabulate specific statistics.
   is the number of optimisation instances that reach a solution not proven
   optimal and `B` is the number of satisfaction instance finding a solution.
   Please consult the `-h` flag to display all options.
+- `mzn-bench report-mzn-scores <statistics.csv>` - This command will report the
+  MiniZinc scores computed based on the performance of solvers across instances. 
+  These scores are calculated using a weighted formula that considers runtime, 
+  solution quality, and solver status. Use the `-h` flag to explore additional 
+  options and configurations.
 - `mzn-bench compare-configurations <statistics.csv> <before_conf> <after_conf>` - This command reports on the differences of the achieved
   results between two configurations (differences in status, runtime, and
   objective). You can adjust the changes deemed significant with the
