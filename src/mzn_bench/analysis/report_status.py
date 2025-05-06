@@ -6,13 +6,6 @@ from tabulate import tabulate
 from minizinc.result import Status
 
 
-# TODO: Maybe this should be included in MiniZinc Python
-def status_from_str(s: str) -> Status:
-    for k, v in Status.__members__.items():
-        if k == s.upper():
-            return v
-
-
 def report_status(keys: Iterable[str], statistics: Path, avg: str, tablefmt: str):
     seen_status = set()
     table = {}
@@ -21,7 +14,7 @@ def report_status(keys: Iterable[str], statistics: Path, avg: str, tablefmt: str
         for row in reader:
             key = [row[key] for key in keys]
 
-            status = status_from_str(row["status"])
+            status = Status.from_str(row["status"])
             seen_status.add(status)
 
             key = tuple(key)
