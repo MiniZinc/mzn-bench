@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple, Dict, List
 
+import pandas as pd
+from .report_mzn_scores import calculate_mzn_scores
+
 # The difference in objectives for them to be considered the same
 SAME_DELTA = 1e-6
 # Status changes (from, to) considered positive
@@ -33,6 +36,9 @@ CONFLICT_STATUS_CHANGES = [
 class PerformanceChanges:
     time_delta: float
     obj_delta: float
+    # MiniZinc scores
+    from_mzn_score: float
+    to_mzn_score: float
     # (from_status, to_status) -> (model, datafile)
     status_changes: Dict[Tuple[str, str], List[Tuple[str, str]]] = field(
         default_factory=lambda: defaultdict(list)
@@ -90,6 +96,8 @@ class PerformanceChanges:
             output += f"- Missing instances: {len(self.missing_instances)}\n"
         if len(self.obj_conflicts) > 0:
             output += f"- Objective conflicts: {len(self.obj_conflicts)}\n"
+        if self.from_mzn_score is not None and self.to_mzn_score is not None:
+            output += f"- MiniZinc scores: {self.from_mzn_score:.2f} -> {self.to_mzn_score:.2f}\n"
         output += (
             f"- Status Changes: {n_status_changes} ({'conflicts: ' + str(n_bad_status_changes) + ', ' if n_bad_status_changes > 0 else ''}positive: {n_pos_status_changes})\n"
             f"- Runtime Changes: {len(self.time_changes)} (positive: {len([x for x in self.time_changes if (x[3] - x[2]) / x[2] < 0])})\n"
@@ -194,6 +202,8 @@ class PerformanceChanges:
                 }
                 for (model, data) in self.missing_instances
             ],
+            "from_mzn_score": self.from_mzn_score,
+            "to_mzn_score": self.to_mzn_score,
         }
 
         assert method == "json"
@@ -214,10 +224,29 @@ def read_row(row: dict):
 
 
 def compare_configurations(
-    statistics: Path, from_conf: str, to_conf: str, time_delta: float, obj_delta: float
+    statistics: Path,
+    from_conf: str,
+    to_conf: str,
+    time_delta: float,
+    obj_delta: float,
+    include_mzn_scores: bool = False,
+    time_limit: int = 1200,
+    complete: bool = True,
 ) -> PerformanceChanges:
     from_stats = {}
     to_stats = {}
+
+    from_mzn_score, to_mzn_score = (
+        calculate_mzn_scores(
+            pd.read_csv(statistics),
+            from_conf,
+            to_conf,
+            time_limit,
+            complete,
+        )
+        if include_mzn_scores
+        else (None, None)
+    )
 
     with statistics.open() as csvfile:
         reader = csv.DictReader(csvfile)
@@ -228,7 +257,7 @@ def compare_configurations(
             elif row["configuration"] == to_conf:
                 to_stats[key] = read_row(row)
 
-    changes = PerformanceChanges(time_delta, obj_delta)
+    changes = PerformanceChanges(time_delta, obj_delta, from_mzn_score, to_mzn_score)
 
     for key, from_val in from_stats.items():
         to_val = to_stats.get(key, None)
