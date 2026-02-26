@@ -122,9 +122,11 @@ def schedule(
     job_name: str = "MiniZinc Benchmark",
     cpus_per_task: int = 1,
     memory: int = 4096,
+    mem_per_cpu: bool = False,
     debug: bool = False,
     nice: Optional[int] = None,
     wait: bool = False,
+    **kwargs,
 ) -> NoReturn:
     # Count number of instances
     assert instances.exists()
@@ -161,9 +163,9 @@ def schedule(
     cmd = [
         "sbatch",
         f"--output={slurm_output}",
-        f'--job-name="{job_name}"',
+        f'--job-name={job_name}',
         f"--cpus-per-task={cpus_per_task}",
-        f"--mem={memory}",
+        f"--mem-per-cpu={memory}" if mem_per_cpu else f"--mem={memory}",
         f"--array=1-{n_tasks}",
         f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
     ]
@@ -179,6 +181,8 @@ def schedule(
         cmd.append(f"--nice={nice}")
     if wait:
         cmd.append("--wait")
+    for option, value in kwargs.items():
+        cmd.append(f"--{option.replace('_', '-')}={value}")
     cmd.extend(
         [
             str(this_script.resolve()),
