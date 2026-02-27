@@ -1,10 +1,9 @@
-from pathlib import Path
-import pandas as pd
 import itertools
+from pathlib import Path
 
-from typing import Iterable
-from tabulate import tabulate
+import pandas as pd
 from minizinc.result import Status
+from tabulate import tabulate
 
 
 def calculate_mzn_scores(
@@ -167,9 +166,9 @@ def report_mzn_scores(
         dataframes["all"] = df
     else:
         # Otherwise, group by the specified column
-        assert (
-            grouping in df.columns
-        ), f"Grouping '{grouping}' not found in DataFrame columns"
+        assert grouping in df.columns, (
+            f"Grouping '{grouping}' not found in DataFrame columns"
+        )
         for group_value in df[grouping].unique():
             group_df = df[df[grouping] == group_value]
             dataframes[group_value] = group_df

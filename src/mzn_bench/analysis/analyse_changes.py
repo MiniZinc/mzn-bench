@@ -91,7 +91,7 @@ class PerformanceChanges:
                 "Negative Status Changes:\n------------------------\n" + stat_neg_str
             )
 
-        output = "Summary:\n" "========\n"
+        output = "Summary:\n========\n"
         if len(self.missing_instances) > 0:
             output += f"- Missing instances: {len(self.missing_instances)}\n"
         if len(self.obj_conflicts) > 0:

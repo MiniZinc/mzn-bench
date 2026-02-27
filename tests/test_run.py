@@ -51,15 +51,15 @@ def test_run():
 
     with pytest.raises(SystemExit) as error:
         check_solutions_(0, "./tests", OUTPUT_DIR, ["-s", "--timeout", "-1"])
-    assert (
-        error.value.code == pytest.ExitCode.OK
-    ), f"Check solution did not exit successfully: {error=}"
+    assert error.value.code == pytest.ExitCode.OK, (
+        f"Check solution did not exit successfully: {error=}"
+    )
 
     with pytest.raises(SystemExit) as error:
         check_statuses_(OUTPUT_DIR, ["-s"])
-    assert (
-        error.value.code == pytest.ExitCode.OK
-    ), f"Check solution did not exit successfully: {error=}"
+    assert error.value.code == pytest.ExitCode.OK, (
+        f"Check solution did not exit successfully: {error=}"
+    )
 
     # Use `poetry install --all-extras` to test this part
     if output_file is not None:

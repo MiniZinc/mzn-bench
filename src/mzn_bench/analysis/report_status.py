@@ -65,14 +65,14 @@ def report_status(keys: Iterable[str], statistics: Path, avg: str, tablefmt: str
                     Status.OPTIMAL_SOLUTION,
                     Status.UNSATISFIABLE,
                 ]:
-                    o = f"{len(row[s])} ({sum(row[s]) / len(row[s]) :.2f}s)"
+                    o = f"{len(row[s])} ({sum(row[s]) / len(row[s]):.2f}s)"
                 elif s == Status.SATISFIED:
                     if avg:
-                        o = f"{row[s][0]-len(row[s][1])} + {len(row[s][1])}"
+                        o = f"{row[s][0] - len(row[s][1])} + {len(row[s][1])}"
                         if len(row[s][1]) > 0:
-                            o += f" ({sum(row[s][1]) / len(row[s][1]) :.2f}s)"
+                            o += f" ({sum(row[s][1]) / len(row[s][1]):.2f}s)"
                     else:
-                        o = f"{row[s][0]-row[s][1]} + {row[s][1]}"
+                        o = f"{row[s][0] - row[s][1]} + {row[s][1]}"
                 else:
                     o = row[s]
                 line.append(o)
