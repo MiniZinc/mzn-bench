@@ -34,7 +34,13 @@ def calculate_mzn_scores(
             continue
 
         # Determine the problem type based on the first non-NaN "method" attribute
-        method = instance_df["method"].dropna().iloc[0]
+        method_value = instance_df["method"].dropna()
+        if method_value.empty:
+            print(
+                f"Skipping instance {instance} since all configurations have 'method' is N/A."
+            )
+            continue
+        method = method_value.iloc[0]
         if method not in ["satisfy", "maximize", "minimize"]:
             raise ValueError(f"Unknown method '{method}' for instance {instance}")
 
