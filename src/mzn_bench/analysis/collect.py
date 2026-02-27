@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, Generator
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
+
 from mzn_bench import yaml
 
 STANDARD_KEYS = [
@@ -44,7 +45,7 @@ def collect_instances(benchmarks_location: str, shared_data: Optional[str]):
 
 def collect_objectives(
     dirs: Iterable[Union[str, Path]], additional_params: Optional[List[str]] = None
-) -> Generator[Dict[str, Any]]:
+) -> Iterator[Dict[str, Any]]:
     base_keys = STANDARD_KEYS.copy()
     base_keys.remove("status")  # No need to output SAT every time
     for dir in dirs:
@@ -68,7 +69,7 @@ def collect_objectives(
 
 def collect_statistics(
     dirs: Iterable[Union[str, Path]], filter_stats: Optional[List[str]] = None
-) -> Generator[Dict[str, Any]]:
+) -> Iterator[Dict[str, Any]]:
     base_keys = STANDARD_KEYS
     for dir in dirs:
         path = (dir if isinstance(dir, Path) else Path(dir)).resolve()
