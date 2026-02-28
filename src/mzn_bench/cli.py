@@ -7,10 +7,10 @@ from typing import Iterable, Optional
 
 import click
 
+from mzn_bench.analysis.collect import STANDARD_KEYS
 from mzn_bench.analysis.collect import collect_instances as collect_insts
 from mzn_bench.analysis.collect import collect_objectives as collect_objs
 from mzn_bench.analysis.collect import collect_statistics as collect_stats
-from mzn_bench.analysis.collect import STANDARD_KEYS
 
 IMPORT_ERROR = """This feature is not supported in minimal minizinc-slurm environments.
 
@@ -301,7 +301,7 @@ def report_mzn_scores(
 
 @main.command()
 @click.option(
-    "--groupings",
+    "--grouping",
     help="Aggregate results over one or more groupings",
     type=click.Choice(["configuration", "run", "problem", "model", "data_file"]),
     default=["configuration"],
@@ -442,9 +442,10 @@ def plot_all_instances(
     OUT_FILE is the file to write the plot to
     """
     try:
+        from bokeh.plotting import save
+
         from .analysis.collect import read_csv
         from .analysis.plot import plot_all_instances as fn
-        from bokeh.plotting import save
 
         objs, stats = read_csv(objectives, statistics)
         figure = fn(objs, stats)
@@ -471,6 +472,7 @@ def plot_cactus(
     """
     try:
         import pandas as pd
+
         from .analysis.plot import plot_cactus as fn
 
         stats = pd.read_csv(statistics)
