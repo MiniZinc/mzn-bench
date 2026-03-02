@@ -485,5 +485,129 @@ def plot_cactus(
         exit(1)
 
 
+@main.command()
+@click.argument(
+    "solutions", metavar="solns_file", type=click.Path(exists=True, file_okay=True)
+)
+@click.option(
+    "--par",
+    default=2,
+    help="Penalty factor applied while no solution has been achieved for instance (N times worst objective score).",
+)
+@click.option(
+    "--palette",
+    default="Spectral5",
+    show_default=True,
+    help="Bokeh palette name (for example: Spectral5, Viridis8, Turbo256, or Spectral).",
+)
+@click.option(
+    "--title",
+    default="Summed objective over time",
+    show_default=True,
+    help="Plot title.",
+)
+@click.option(
+    "--x-label",
+    default="Time (s)",
+    show_default=True,
+    help="X axis label.",
+)
+@click.option(
+    "--y-label",
+    default="Objective",
+    show_default=True,
+    help="Y axis label.",
+)
+@click.option(
+    "--rename",
+    "renames",
+    multiple=True,
+    help="Rename configuration legend labels using OLD=NEW. Repeat for multiple mappings.",
+)
+@click.option(
+    "--log-y/--linear-y",
+    default=False,
+    show_default=True,
+    help="Use logarithmic scaling on the y-axis.",
+)
+@click.option(
+    "--legend/--no-legend",
+    "show_legend",
+    default=True,
+    show_default=True,
+    help="Show legend on the plot.",
+)
+@click.argument("out_file", type=click.Path(file_okay=True))
+def plot_primal_integral(
+    solutions: str,
+    out_file: str,
+    par: int,
+    palette: str,
+    title: str,
+    x_label: str,
+    y_label: str,
+    renames: Iterable[str],
+    log_y: bool,
+    show_legend: bool,
+):
+    """Plots all configurations in a histogram of solved instances
+
+    SOLNS_FILE is the CSV file containing aggregated solutions data
+    OUT_FILE is the file to write the plot to
+    """
+    try:
+        import pandas as pd
+        from bokeh import palettes as bokeh_palettes
+
+        from .analysis.plot import plot_primal_integral as fn
+
+        solns = pd.read_csv(solutions)
+        palette_value = getattr(bokeh_palettes, palette, None)
+        if isinstance(palette_value, dict) and palette_value:
+            palette_value = palette_value[max(palette_value)]
+
+        if not isinstance(palette_value, (list, tuple)) or len(palette_value) == 0:
+            raise click.BadParameter(
+                "Unknown --palette '{}'. Use a Bokeh palette name such as "
+                "Spectral5, Viridis8, Turbo256, or Spectral.".format(palette)
+            )
+
+        rename_map = {}
+        rename_order = []
+        for rename in renames:
+            if "=" not in rename:
+                raise click.BadParameter(
+                    f"Invalid --rename '{rename}'. Expected format OLD=NEW."
+                )
+            old, new = rename.split("=", 1)
+            old = old.strip()
+            new = new.strip()
+            if not old or not new:
+                raise click.BadParameter(
+                    f"Invalid --rename '{rename}'. Expected non-empty OLD and NEW."
+                )
+            rename_map[old] = new
+            if old not in rename_order:
+                rename_order.append(old)
+
+        fig = fn(
+            solns,
+            par=par,
+            palette=palette_value,
+            title=title,
+            x_label=x_label,
+            y_label=y_label,
+            log_y=log_y,
+            show_legend=show_legend,
+            configuration_order=rename_order,
+            rename_configurations=rename_map,
+        )
+        fig.savefig(out_file)
+
+    except ImportError:
+        click.echo(IMPORT_ERROR, err=True)
+        exit(1)
+
+
 if __name__ == "__main__":
     main()

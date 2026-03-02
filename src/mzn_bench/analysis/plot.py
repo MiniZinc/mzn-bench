@@ -1,7 +1,10 @@
 import math
 from itertools import cycle
+from typing import Mapping, Sequence
 
+import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 from bokeh.models import CDSView, ColumnDataSource, GroupFilter
 from bokeh.models.annotations import Span
 from bokeh.models.ranges import FactorRange
@@ -9,8 +12,6 @@ from bokeh.models.tools import HoverTool
 from bokeh.palettes import Palette, Spectral5
 from bokeh.plotting import figure, gridplot
 from bokeh.transform import factor_cmap
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 def plot_cactus(stats: pd.DataFrame):
@@ -335,3 +336,144 @@ def plot_total_time(stats: pd.DataFrame, palette: Palette = Spectral5) -> figure
     p.xaxis.axis_label = "Time (s)"
     p.yaxis.axis_label = "Configuration"
     return p
+
+
+def plot_primal_integral(
+    solns: pd.DataFrame,
+    par: int = 2,
+    palette: Palette = Spectral5,
+    title: str = "Summed objective over time",
+    x_label: str = "Time (s)",
+    y_label: str = "Objective",
+    log_y: bool = False,
+    show_legend: bool = True,
+    configuration_order: Sequence[str] | None = None,
+    rename_configurations: Mapping[str, str] | None = None,
+) -> figure:
+    """Plots a summary bar graph giving primal integral for each configuration
+        and run.
+
+    Args:
+        solns (pd.DataFrame): Data frame containing the solutions output
+        par (int, optional): Penalty factor applied while no solution has been achieved for instance (N times worst objective score). Defaults to 2.
+        palette (Palette, optional): Colour palette. Defaults to Spectral5.
+        title (str, optional): Plot title.
+        x_label (str, optional): X axis label.
+        y_label (str, optional): Y axis label.
+        log_y (bool, optional): Whether to use a logarithmic y-axis.
+        show_legend (bool, optional): Whether to show a legend.
+        configuration_order (Sequence[str] | None, optional):
+            Preferred order for plotting configurations.
+        rename_configurations (Mapping[str, str] | None, optional):
+            Mapping from configuration name to display name.
+
+    Returns:
+        figure: The plotting figure
+    """
+    required = {
+        "configuration",
+        "problem",
+        "model",
+        "data_file",
+        "time",
+        "run",
+        "objective",
+    }
+    missing = required.difference(solns.columns)
+    if missing:
+        raise ValueError(
+            "Missing required columns for primal integral plot: {}".format(
+                ", ".join(sorted(missing))
+            )
+        )
+
+    df = solns.copy()
+    df["data_file"] = df["data_file"].fillna("")
+    df["time"] = pd.to_numeric(df["time"], errors="coerce")
+    df["objective"] = pd.to_numeric(df["objective"], errors="coerce")
+    df = df.dropna(subset=["time", "objective"])
+    # Reduce noise from dense timestamps by binning solutions to nearest second.
+    df["time"] = df["time"].round().astype(int)
+
+    instance_cols = ["model", "data_file"]
+    times = sorted(df["time"].unique())
+    max_time = max(times)
+    if 0.0 not in times:
+        times = [0.0] + times
+    if times[-1] != max_time:
+        times.append(max_time)
+
+    worst_by_instance = df.groupby(instance_cols)["objective"].max()
+    penalty_by_instance = worst_by_instance * par
+    configurations = list(df["configuration"].unique())
+    if configuration_order is not None:
+        ordered = [conf for conf in configuration_order if conf in configurations]
+        remaining = [conf for conf in configurations if conf not in ordered]
+        configurations = ordered + remaining
+
+    rows = []
+    for configuration in configurations:
+        conf = df[df["configuration"].eq(configuration)]
+        for instance in penalty_by_instance.index:
+            instance_mask = conf["model"].eq(instance[0]) & conf["data_file"].eq(
+                instance[1]
+            )
+            series = (
+                conf[instance_mask]
+                .sort_values("time")[["time", "objective"]]
+                .groupby("time", as_index=False)
+                .min()
+            )
+            series["objective"] = series["objective"].cummin()
+            idx = 0
+            current = penalty_by_instance.loc[instance]
+            for t in times:
+                while idx < len(series) and series.iloc[idx]["time"] <= t:
+                    current = series.iloc[idx]["objective"]
+                    idx += 1
+                rows.append(
+                    {
+                        "configuration": configuration,
+                        "time": t,
+                        "objective": current,
+                    }
+                )
+
+    plot_df = (
+        pd.DataFrame(rows)
+        .groupby(["configuration", "time"], as_index=False)["objective"]
+        .sum()
+        .sort_values(["configuration", "time"])
+    )
+
+    rename_configurations = (
+        {} if rename_configurations is None else dict(rename_configurations)
+    )
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    colors = cycle(palette)
+    for configuration, color in zip(configurations, colors):
+        conf_df = plot_df[plot_df["configuration"].eq(configuration)]
+        ax.step(
+            conf_df["time"],
+            conf_df["objective"],
+            where="post",
+            label=rename_configurations.get(configuration, configuration),
+            color=color,
+        )
+
+    ax.set(
+        title=title,
+        xlabel=x_label,
+        ylabel=y_label,
+    )
+    if log_y:
+        if (plot_df["objective"] <= 0).any():
+            raise ValueError(
+                "Cannot use logarithmic y-axis with non-positive objective values."
+            )
+        ax.set_yscale("log")
+    if show_legend:
+        ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0)
+    fig.tight_layout()
+    return fig
