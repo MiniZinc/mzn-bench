@@ -75,7 +75,10 @@ These are all the possible arguments to `schedule`:
 - `configurations: Iterable[Configuration]` - MiniZinc solving configurations
   (see below for details).
 - `nodelist: Optional[Iterable[str]]` - A list of nodes on which SLURM is allowed to
-  schedule the tasks. If `None`, `mzn-bench` will sequentially solve the instances locally.
+  schedule the tasks.
+- `partition: Optional[Iterable[str]]` - The SLURM partitions to use. If both
+  `nodelist` and `partition` are `None`, `mzn-bench` will sequentially solve
+  the instances locally.
 - `output_dir: Path = Path.cwd() / "results"` - The directory in which the raw
   results will be placed. This directory will be created if it does not yet
   exist.
@@ -113,6 +116,14 @@ A `Configuration` object has the following attributes:
   `DZNExpression` object (e.g., `{"preferred_encoding": DZNExpression("UNARY")}`).
 - `extra_model_files: List[Path] = field(default_factory=list)` - Extra model files to be
   added when using a specific Configuration.
+- `stage: Optional[bool] = None` - Copy MiniZinc (the directory above
+  `bin/minizinc`), the `.mzn` files in the directories of the model files, and
+  the data files to `$TMPDIR` before the timer starts, so that flattening does
+  not wait for a network file system. The `*_sol.yml` and `*_stats.yml` files
+  are written there and copied to `output_dir` at the end of the task. After
+  an error or at the time limit, the files that exist are copied. The copy
+  time is the `stage_time` statistic. If `None`, staging is used only inside a
+  SLURM job with `$TMPDIR` set. If `False`, staging is never used.
 
 ## Schedule SLURM jobs
 
@@ -132,6 +143,21 @@ python start_bench.py
 ```
 
 You can keep track of the status of your job using the `squeue` command.
+
+For stable timings, set a fixed `random_seed` in each `Configuration`, and
+pass extra SLURM options to `schedule`. For example:
+
+```python
+schedule(
+    ...,
+    partition=["fitc"],          # --partition: the group of nodes to use
+    qos="fitcq",                 # --qos: the queue for this partition
+    exclusive="user",            # --exclusive=user: only your tasks share a node
+    constraint="Xeon-Gold-6338", # --constraint: use one CPU type
+)
+```
+
+Do not mix CPU types in one experiment: they give different times.
 
 **WARNING:** Once the job has started the CSV file containing the instances and
 the instance files themselves should not be changed or moved until the full

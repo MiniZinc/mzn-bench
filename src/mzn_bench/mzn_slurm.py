@@ -2,8 +2,12 @@
 import asyncio
 import csv
 import json
+import math
 import os
+import shutil
+import signal
 import sys
+import tempfile
 import time
 import traceback
 from dataclasses import dataclass, field, fields
@@ -36,6 +40,7 @@ class Configuration:
     other_flags: Dict[str, Any] = field(default_factory=dict)
     extra_data: Dict[str, Any] = field(default_factory=dict)
     extra_model_files: List[Path] = field(default_factory=list)
+    stage: Optional[bool] = None
 
     def to_dict(self):
         # Non-recursive version of `asdict`
@@ -167,7 +172,8 @@ def schedule(
         f"--cpus-per-task={cpus_per_task}",
         f"--mem-per-cpu={memory}" if mem_per_cpu else f"--mem={memory}",
         f"--array=1-{n_tasks}",
-        f"--time={timeout + timedelta(minutes=1)}",  # Set hard timeout as failsafe
+        # Set hard timeout (in minutes) as failsafe, with extra time to stage files
+        f"--time={math.ceil((timeout + timedelta(minutes=3)) / timedelta(minutes=1))}",
     ]
     if nodelist is not None:
         cmd += [
@@ -200,9 +206,19 @@ def schedule(
 
 
 async def run_instance(
-    problem, model_files, data, config, timeout, stat_base, sol_file, stats_file
+    problem,
+    model_files,
+    data,
+    config,
+    timeout,
+    stat_base,
+    sol_file,
+    stats_file,
+    stage_time=None,
 ):
     statistics = stat_base.copy()
+    if stage_time is not None:
+        statistics["stage_time"] = stage_time
     start = time.perf_counter()
     try:
         driver = minizinc.default_driver
@@ -270,8 +286,74 @@ async def run_instance(
         yaml.dump(statistics, file)
 
 
+# Installations that are not a self-contained MiniZinc bundle
+_SYSTEM_PREFIXES = [
+    "/",
+    "/usr",
+    "/usr/local",
+    "/opt",
+    "/opt/local",
+    "/opt/homebrew",
+    "~",
+    "~/.local",
+]
+
+
+# Not an `Exception`, so that asyncio does not catch it in a callback
+class _Terminated(SystemExit):
+    pass
+
+
+def _terminate(signum, frame):
+    raise _Terminated("Received SIGTERM (e.g., SLURM time limit)")
+
+
+def _stage(
+    stage_dir: Path,
+    executable: Optional[Path],
+    model_files: List[Path],
+    data: List[Path],
+):
+    """Copy the MiniZinc bundle, the `model_files` and the other `.mzn` files in
+    their directories, and the `data` files to `stage_dir`.
+
+    Returns the path of the copied executable (or the original if it is not part
+    of a bundle) and the paths of the copied model and data files."""
+    if executable is not None:
+        # Linux bundle: <root>/bin/minizinc, macOS app: <root>/Resources/minizinc
+        exe = executable.resolve()
+        root = exe.parent.parent
+        share = [root / "share" / "minizinc", root / "Resources" / "share" / "minizinc"]
+        # Do not copy a full system, conda, or Spack prefix
+        prefixes = {Path(p).expanduser().resolve() for p in _SYSTEM_PREFIXES}
+        is_prefix = root in prefixes or any(
+            (root / d).exists() for d in ["conda-meta", ".spack"]
+        )
+        if any(d.is_dir() for d in share) and not is_prefix:
+            shutil.copytree(root, stage_dir / root.name, symlinks=True)
+            executable = stage_dir / root.name / exe.relative_to(root)
+        else:
+            print(f"WARNING: {exe} is not part of a MiniZinc bundle", file=sys.stderr)
+
+    # Copy the files at the same relative location. Model files can include
+    # other models in their directory, data files cannot include files.
+    def dest(f: Path) -> Path:
+        return stage_dir / "files" / f.absolute().relative_to(f.anchor)
+
+    for d in {f.parent for f in model_files}:
+        dest(d).mkdir(parents=True, exist_ok=True)
+        for f in d.glob("*.mzn"):
+            shutil.copy2(f, dest(f))
+    for f in model_files + data:
+        dest(f).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, dest(f))
+    return executable, [dest(f) for f in model_files], [dest(f) for f in data]
+
+
 def main(instances, output_dir):
     filename = "minizinc_slurm"
+    stage_dir = None
+    prev_driver = minizinc.default_driver
     try:
         task_id = int(os.environ["SLURM_ARRAY_TASK_ID"]) - 1
         timeout = timedelta(milliseconds=int(os.environ["MZN_SLURM_TIMEOUT"]))
@@ -313,9 +395,9 @@ def main(instances, output_dir):
         data = []
         for file in selected_instance[2].split(":"):
             if file != "":
-                path = Path(selected_instance[2])
+                path = Path(file)
                 if not path.is_absolute():
-                    path = instances.parent / file
+                    path = instances.parent / path
                 data.append(path)
 
         stat_base = {
@@ -326,6 +408,27 @@ def main(instances, output_dir):
             "status": str(minizinc.result.Status.UNKNOWN),
         }
 
+        # Copy MiniZinc and the instance files to the (local) $TMPDIR
+        result_dir = output_dir
+        stage_time = None
+        if config.stage or (
+            config.stage is None
+            and "SLURM_JOB_ID" in os.environ
+            and os.environ.get("TMPDIR")
+        ):
+            start = time.perf_counter()
+            stage_dir = Path(tempfile.mkdtemp(prefix="mzn_bench_"))  # Uses $TMPDIR
+            result_dir = stage_dir
+            # The default driver is the driver of `config.minizinc` (see above)
+            driver = minizinc.default_driver
+            executable = None if driver is None else driver.executable
+            staged, model_files, data = _stage(stage_dir, executable, model_files, data)
+            # Start the copied driver here, outside of the timed part
+            if staged != executable:
+                minizinc.Driver(staged).make_default()
+                config.minizinc = None
+            stage_time = time.perf_counter() - start
+
         # Run instance
         asyncio.run(
             run_instance(
@@ -335,18 +438,33 @@ def main(instances, output_dir):
                 config,
                 timeout,
                 stat_base,
-                output_dir / f"{filename}_sol.yml",
-                output_dir / f"{filename}_stats.yml",
+                result_dir / f"{filename}_sol.yml",
+                result_dir / f"{filename}_stats.yml",
+                stage_time,
             )
         )
-    except Exception:
+    except (Exception, _Terminated):
         if "SLURM_JOB_NODELIST" not in os.environ:
             raise
         file = output_dir / f"{filename}_err.txt"
         file.write_text(f"ERROR: {traceback.format_exc()}")
+    finally:
+        if signal.getsignal(signal.SIGTERM) is _terminate:
+            signal.signal(signal.SIGTERM, signal.SIG_IGN)  # Do not stop the clean up
+        minizinc.default_driver = prev_driver
+        if stage_dir is not None:
+            try:
+                for name in [f"{filename}_sol.yml", f"{filename}_stats.yml"]:
+                    if (stage_dir / name).exists():
+                        tmp = output_dir / f"{name}.tmp"
+                        shutil.copyfile(stage_dir / name, tmp)
+                        tmp.replace(output_dir / name)
+            finally:
+                shutil.rmtree(stage_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, _terminate)  # SLURM sends SIGTERM at the time limit
     instances = Path(sys.argv[1])
     output_dir = Path(sys.argv[2]) if len(sys.argv) == 3 else Path.home()
     main(instances, output_dir)
