@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import csv
 import sys
 from pathlib import Path
@@ -234,7 +235,7 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
         exit(1)
 
 
-@main.command()
+@main.command("report-scores")
 @click.option(
     "--grouping",
     help="Aggregate results over one grouping",
@@ -243,9 +244,11 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
 )
 @click.option(
     "--time-limit",
-    default=1200,
+    default=None,
     type=int,
-    help="Time limit for minizinc score calculation, default is 1200 seconds",
+    help="""Time limit in seconds. The default is 1200 seconds for the complete
+            and incomplete scores. For the time-in-lead score, the default is
+            inferred from the statistics.""",
 )
 @click.option(
     "--output-mode",
@@ -259,26 +262,48 @@ def check_statuses_(dir: str, pytest_args: Iterable[str]):
     help="The configuration to use as a baseline for scoring",
 )
 @click.option(
+    "--score",
+    type=click.Choice(["complete", "incomplete", "time-in-lead"]),
+    default="complete",
+    help="""The scoring method: the complete or incomplete MiniZinc Challenge
+            score, or the pairwise time-in-lead score (needs --objectives).""",
+)
+@click.option(
     "--incomplete",
     is_flag=True,
     default=False,
-    help="Use incomplete scoring method",
+    hidden=True,
+    help="Use incomplete scoring method (same as --score incomplete)",
+)
+@click.option(
+    "--objectives",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False),
+    help="CSV file from collect-objectives (needed for --score time-in-lead)",
 )
 @click.argument(
     "statistics", metavar="stats_file", type=click.Path(exists=True, file_okay=True)
 )
-def report_mzn_scores(
+def report_scores(
     grouping: str,
     statistics: str,
     output_mode: str,
-    time_limit: int,
+    time_limit: Optional[int],
     baseline: Optional[str],
-    incomplete: bool = False,
+    score: str,
+    incomplete: bool,
+    objectives: Optional[str],
 ):
-    """Aggregate MiniZinc scores into a table
+    """Aggregate pairwise scores into a table
 
     STATS_FILE is the CSV file containing aggregated statistics data
     """
+    if incomplete:
+        score = "incomplete"
+    if score == "time-in-lead" and objectives is None:
+        raise click.UsageError(
+            "--score time-in-lead needs --objectives <objectives.csv>"
+        )
     try:
         from .analysis.report_mzn_scores import (
             report_mzn_scores as report_mzn_scores_fn,
@@ -291,12 +316,19 @@ def report_mzn_scores(
                 output_mode,
                 baseline,
                 time_limit,
-                not incomplete,
+                score,
+                None if objectives is None else Path(objectives),
             )
         )
     except ImportError:
         click.echo(IMPORT_ERROR, err=True)
         exit(1)
+
+
+# Old name of report-scores, hidden from the help text
+_report_mzn_scores = copy.copy(report_scores)
+_report_mzn_scores.hidden = True
+main.add_command(_report_mzn_scores, name="report-mzn-scores")
 
 
 @main.command()

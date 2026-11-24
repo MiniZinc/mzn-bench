@@ -203,11 +203,29 @@ The following scripts filter and tabulate specific statistics.
   is the number of optimisation instances that reach a solution not proven
   optimal and `B` is the number of satisfaction instance finding a solution.
   Please consult the `-h` flag to display all options.
-- `mzn-bench report-mzn-scores <statistics.csv>` - This command will report the
-  MiniZinc scores computed based on the performance of solvers across instances. 
-  These scores are calculated using a weighted formula that considers runtime, 
-  solution quality, and solver status. Use the `-h` flag to explore additional 
-  options and configurations.
+- `mzn-bench report-scores <statistics.csv>` - This command reports pairwise
+  scores of the configurations across instances. Choose the scoring method
+  with `--score`:
+  - `complete` (default) and `incomplete` are the MiniZinc Challenge scores.
+    They consider runtime, final solution quality, and solver status.
+  - `time-in-lead` needs `--objectives <objectives.csv>` from
+    `collect-objectives`. It treats each run as a state per second: no
+    solution, the best objective found so far, or a proof (of optimality or
+    unsatisfiability). On each instance, a configuration scores the fraction of
+    seconds in which its state is better than the state of the other
+    configuration. Equal seconds (also with no solution for both) count 1/2
+    for each. The two scores of a pair on one instance sum to 1. The time
+    limit is inferred from the statistics, unless you give `--time-limit`.
+
+  Use `--baseline <conf>` to score each configuration only against one
+  configuration, and `--grouping data_file` for scores per instance. Use
+  `--output-mode tsv` for output that is easy to parse. Use the `-h` flag to
+  explore additional options.
+
+  ```bash
+  mzn-bench report-scores --score time-in-lead --objectives objectives.csv \
+    --baseline main --grouping data_file statistics.csv
+  ```
 - `mzn-bench compare-configurations <statistics.csv> <before_conf> <after_conf>` - This command reports on the differences of the achieved
   results between two configurations (differences in status, runtime, and
   objective). You can adjust the changes deemed significant with the

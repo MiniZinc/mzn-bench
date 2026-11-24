@@ -141,20 +141,52 @@ def calculate_mzn_scores(
     return mzn_scores[conf], mzn_scores[other_conf]
 
 
+SCORES = ["complete", "incomplete", "time-in-lead"]
+
+
 def report_mzn_scores(
     grouping: str,
     statistics: Path,
     tablefmt: str,
     baseline: str | None = None,
-    time_limit: int = 1200,
-    complete: bool = True,
+    time_limit: int | None = None,
+    score: str = "complete",
+    objectives: Path | None = None,
 ) -> str:
+    """Report pairwise scores per configuration as a table.
+
+    score is one of SCORES. The time-in-lead score needs the objectives CSV
+    file. Its time limit is inferred from the statistics if it is not given.
+    The other scores use a time limit of 1200 seconds if it is not given.
+    """
+    if score not in SCORES:
+        raise ValueError(f"Unknown score '{score}', expected one of {SCORES}")
+
     # Read the statistics file
     df = pd.read_csv(statistics)
 
     # Replace NaN values in "model" and "data_file" columns with empty strings
     df["model"] = df["model"].fillna("")
     df["data_file"] = df["data_file"].fillna("")
+
+    if score == "time-in-lead":
+        from .time_in_lead import TimeInLead, infer_time_limit
+
+        if objectives is None:
+            raise ValueError("The time-in-lead score needs an objectives CSV file")
+        if time_limit is None:
+            time_limit = infer_time_limit(df)
+        lead = TimeInLead(df, pd.read_csv(objectives), time_limit)
+
+        def pair_score(sub_df, conf, other_conf):
+            return lead.score(sub_df, conf, other_conf)
+    else:
+        limit = 1200 if time_limit is None else time_limit
+
+        def pair_score(sub_df, conf, other_conf):
+            return calculate_mzn_scores(
+                sub_df, conf, other_conf, limit, score == "complete"
+            )
 
     # Get the list of configurations
     configurations = sorted(df["configuration"].unique())
@@ -184,25 +216,13 @@ def report_mzn_scores(
         if baseline:
             # Calculate scores for all configurations against the baseline
             for conf in configurations:
-                conf_score, baseline_score = calculate_mzn_scores(
-                    sub_df,
-                    conf,
-                    baseline,
-                    time_limit,
-                    complete,
-                )
+                conf_score, baseline_score = pair_score(sub_df, conf, baseline)
                 output[conf].append("%.2f (%.2f)" % (conf_score, baseline_score))
         else:
             mzn_scores = {conf: 0.0 for conf in configurations}
             # Calculate scores for all configurations
             for conf, other_conf in itertools.combinations(configurations, 2):
-                conf_score, other_conf_score = calculate_mzn_scores(
-                    sub_df,
-                    conf,
-                    other_conf,
-                    time_limit,
-                    complete,
-                )
+                conf_score, other_conf_score = pair_score(sub_df, conf, other_conf)
                 # Update the scores for each configuration
                 mzn_scores[conf] += conf_score
                 mzn_scores[other_conf] += other_conf_score
