@@ -2,13 +2,12 @@ from typing import Any, Dict
 
 import pytest
 from minizinc import Method, Status
-from pathlib import Path
 from mzn_bench import yaml
 
 
 class StatsFile(pytest.File):
     def collect(self):
-        with self.fspath.open() as fp:
+        with self.path.open() as fp:
             stats = yaml.load(fp)
             name = ":".join(
                 (
@@ -51,9 +50,9 @@ class StatsItem(pytest.Item):
             ), "Incorrect optimality proof"
 
     def reportinfo(self):
-        return self.fspath, 0, "usecase: {}".format(self.name)
+        return self.path, 0, "usecase: {}".format(self.name)
 
 
-def pytest_collect_file(parent, path):
-    if path.basename.endswith("_stats.yml"):
-        return StatsFile.from_parent(parent, path=Path(path))
+def pytest_collect_file(parent, file_path):
+    if file_path.name.endswith("_stats.yml"):
+        return StatsFile.from_parent(parent, path=file_path)

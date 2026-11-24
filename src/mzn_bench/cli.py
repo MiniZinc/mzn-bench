@@ -98,7 +98,7 @@ def collect_objectives(
 def collect_objectives_(
     dirs: Iterable[str],
     out_file: str,
-    additional_params: Iterable[str],
+    additional_params: Iterable[str] = (),
 ):
     count = 0
     additional_params = list(additional_params)

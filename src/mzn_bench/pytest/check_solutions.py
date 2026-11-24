@@ -32,7 +32,7 @@ class SolFile(pytest.File):
         self.timeout = timeout
 
     def collect(self):
-        with self.fspath.open() as fp:
+        with self.path.open() as fp:
             results = yaml.load(fp) or []
             pairs = [
                 (i, result) for i, result in enumerate(results) if "solution" in result
@@ -117,7 +117,7 @@ class SolItem(pytest.Item):
             )
 
     def reportinfo(self):
-        return self.fspath, 0, "usecase: {}".format(self.name)
+        return self.path, 0, "usecase: {}".format(self.name)
 
 
 class SolutionChecker:
@@ -161,11 +161,11 @@ class SolutionChecker:
             help="Timeout (in seconds) for checker solver. Set to -1 for no timeout.",
         )
 
-    def pytest_collect_file(self, parent, path):
-        if path.basename.endswith("_sol.yml"):
+    def pytest_collect_file(self, parent, file_path):
+        if file_path.name.endswith("_sol.yml"):
             return SolFile.from_parent(
                 parent,
-                path=Path(path),
+                path=file_path,
                 checker=self.checker,
                 num_check=self.num_check,
                 base_dir=Path(self.base_dir),
